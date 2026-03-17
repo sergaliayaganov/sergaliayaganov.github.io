@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<title>Шежіре редакторы</title>
+
+<style>
+body { font-family: Arial; padding:20px; }
+
+.node {
+  display:inline-block;
+  padding:8px 15px;
+  margin:5px;
+  background:#7da7d9;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+.children { margin-left:30px; }
+
+button { margin:5px; }
+</style>
+</head>
+
+<body>
+
+<h2>Шежіре редакторы</h2>
+
+<button onclick="addChild()">Бала қосу</button>
+<button onclick="renameNode()">Атын өзгерту</button>
+<button onclick="save()">Сақтау</button>
+
+<div id="tree"></div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("shezhire"));
+
+if (!data) {
+  data = { name:"АЛАШ", children:[] };
+}
+
+let selected = null;
+
+function createNode(node) {
+  const div = document.createElement("div");
+
+  const label = document.createElement("div");
+  label.className = "node";
+  label.innerText = node.name;
+
+  label.onclick = () => {
+    selected = node;
+    alert("Таңдалды: " + node.name);
+  };
+
+  div.appendChild(label);
+
+  if (!node.children) node.children = [];
+
+  const childrenDiv = document.createElement("div");
+  childrenDiv.className = "children";
+
+  node.children.forEach(child => {
+    childrenDiv.appendChild(createNode(child));
+  });
+
+  div.appendChild(childrenDiv);
+
+  return div;
+}
+
+function render() {
+  document.getElementById("tree").innerHTML = "";
+  document.getElementById("tree").appendChild(createNode(data));
+}
+
+function addChild() {
+  if (!selected) return alert("Алдымен адамды таңда!");
+
+  const name = prompt("Аты:");
+  if (!name) return;
+
+  selected.children.push({ name, children: [] });
+  render();
+}
+
+function renameNode() {
+  if (!selected) return alert("Алдымен таңда!");
+
+  const name = prompt("Жаңа аты:", selected.name);
+  if (!name) return;
+
+  selected.name = name;
+  render();
+}
+
+function save() {
+  localStorage.setItem("shezhire", JSON.stringify(data));
+  alert("Сақталды!");
+}
+
+render();
+
+</script>
+
+</body>
+</html>
