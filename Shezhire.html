@@ -2,99 +2,251 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<title>Серғали Аяганов сайты</title>
-
+<title>Шежіре</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body{
-font-family: Arial;
-margin:0;
-background:#f4f4f4;
-}
-
-header{
-background:#0a3d62;
-color:white;
-padding:20px;
-text-align:center;
-}
-
-nav{
-background:#1e5f8a;
-padding:10px;
-text-align:center;
-}
-
-nav a{
-color:white;
-margin:15px;
-text-decoration:none;
-font-weight:bold;
-}
-
-section{
-padding:30px;
-background:white;
-margin:20px;
-border-radius:10px;
-}
-
-footer{
-background:#0a3d62;
-color:white;
-text-align:center;
-padding:15px;
-}
+body{margin:0;font-family:Arial;background:#f2f2f2;overflow:hidden;}
+#toolbar{position:absolute;top:0;left:0;right:0;background:white;padding:8px;border-bottom:1px solid #ccc;z-index:10;}
+#tree{width:100vw;height:100vh;}
+.node rect{rx:20;ry:20;}
+.node text{font-size:14px;pointer-events:none;}
+.link{fill:none;stroke:#999;stroke-width:2;}
+.selected rect{stroke:orange;stroke-width:3;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;z-index:20;}
+.modalBox{background:white;padding:20px;border-radius:10px;width:320px;max-height:80vh;overflow:auto;}
+.childRow{border-bottom:1px solid #ddd;margin-bottom:10px;padding-bottom:10px;}
+.childRow input,.childRow select{width:100%;margin-bottom:6px;}
+.parentName{font-weight:bold;margin-bottom:10px;}
 </style>
-
 </head>
-
 <body>
+<div id="toolbar">
+  <button onclick="addChild()">Бала қосу</button>
+  <button onclick="renameNode()">Атын өзгерту</button>
+  <button onclick="deleteNode()">Өшіру</button>
+  <button onclick="downloadTree()">JSON сақтау</button>
+  <button onclick="exportLargePNG()">PNG сақтау</button>
+  <button onclick="exportPDF()">PDF сақтау</button>
+  <button onclick="downloadTreeAsImage()">Толық сурет сақтау</button>
+  <input type="file" id="loadJson">
+</div>
 
-<header>
-<h1>Серғали Аяганов</h1>
-<p>Білім, тесттер және шежіре сайты</p>
-</header>
+<svg id="tree"></svg>
 
-<nav>
-<a href="#about">Мен туралы</a>
-<a href="#physics">Физика тесттері</a>
-<a href="#informatics">Информатика тесттері</a>
-<a href="#genealogy">Шежіре</a>
-</nav>
+<div id="childModal" class="modal">
+  <div class="modalBox">
+    <h3>Балалар қосу</h3>
+    <div class="parentName">Ата-ана: <span id="parentDisplay"></span></div>
+    <div id="childRows"></div>
+    <button onclick="addRow()">+ Бала</button><br><br>
+    <button onclick="confirmAddChild()">Қосу</button>
+    <button onclick="closeModal()">Жабу</button>
+  </div>
+</div>
 
-<section id="about">
-<h2>Мен туралы</h2>
-<p>Менің атым Серғали Аяганов. Бұл сайтта физика және информатика пәндері бойынша тест тапсырмалары және Шағалақ ұрпақтарының шежіресі жарияланады.</p>
-</section>
+<script>
+const NODE_WIDTH=160,NODE_HEIGHT=30;
+let defaultData={
+  name:"Алаш",
+  gender:"male",
+  type:"child",
+  children:[
+    {name:"Сейілхан",gender:"male",type:"child"},
+    {name:"Жайлыхан",gender:"male",type:"child"}
+  ]
+};
+let data=JSON.parse(localStorage.getItem("shezhire"))||defaultData;
+function saveData(){localStorage.setItem("shezhire",JSON.stringify(data));}
+let selected=null;
 
-<section id="physics">
-<h2>Физика тесттері</h2>
+const svg=d3.select("#tree");
+const zoomLayer=svg.append("g");
+svg.call(d3.zoom().scaleExtent([0.3,3]).on("zoom",event=>{zoomLayer.attr("transform",event.transform);} ));
 
-<p>1. Күштің өлшем бірлігі?</p>
-<button onclick="alert('Дұрыс жауап: Ньютон')">Жауабын көру</button>
+function getFill(node){return node.gender==="female"?"#f7a6c6":"#8bb7ff";}
+function getStroke(node){return node.type==="nephew"?"gold":"#444";}
+function getStrokeWidth(node){return node.type==="nephew"?4:1;}
 
-</section>
+// Балаларды жайып/жинау
+function toggle(d){
+  if(d.children){
+    d._children=d.children;
+    d.children=null;
+  }else if(d._children){
+    d.children=d._children;
+    d._children=null;
+  }
+}
 
-<section id="informatics">
-<h2>Информатика тесттері</h2>
+function draw(){
+  zoomLayer.selectAll("*").remove();
+  const root=d3.hierarchy(data);
+  const tree=d3.tree().nodeSize([70,240]);
+  tree(root);
 
-<p>1. Компьютердің негізгі құрылғысы?</p>
-<button onclick="alert('Жүйелік блок')">Жауабын көру</button>
+  const nodes=root.descendants(),links=root.links();
 
-</section>
+  // links
+  zoomLayer.selectAll(".link").data(links).enter()
+    .append("path").attr("class","link")
+    .transition().duration(300)
+    .attr("d",d=>{
+      let startX=d.source.y+NODE_WIDTH/2,startY=d.source.x,
+          endX=d.target.y-NODE_WIDTH/2,endY=d.target.x,
+          midX=(startX+endX)/2;
+      return `M ${startX} ${startY} C ${midX} ${startY} ${midX} ${endY} ${endX} ${endY}`;
+    });
 
-<section id="genealogy">
-<h2>Шағалақтың ұрпақтары</h2>
+  const nodeG=zoomLayer.selectAll(".node").data(nodes).enter()
+    .append("g")
+    .attr("class","node")
+    .attr("transform",d=>`translate(${d.y},${d.x})`)
+    .on("click",(event,d)=>{
+      if(event.defaultPrevented) return;
+      selected=d;
+      toggle(d);
+      draw();
+    });
 
-<p>Шежірені көру үшін төмендегі батырманы басыңыз.</p>
+  nodeG.append("rect")
+    .attr("x",-NODE_WIDTH/2).attr("y",-NODE_HEIGHT/2)
+    .attr("width",NODE_WIDTH).attr("height",NODE_HEIGHT)
+    .attr("fill",d=>getFill(d.data))
+    .attr("stroke",d=>getStroke(d.data))
+    .attr("stroke-width",d=>getStrokeWidth(d.data));
 
-<a href="Shezhire.html">Шежірені ашу</a>
+  nodeG.append("text")
+    .attr("text-anchor","middle")
+    .attr("dy","0.35em")
+    .text(d=>d.data.name);
 
-</section>
+  // Таңдалған түйін
+  zoomLayer.selectAll(".node").filter(d=>d===selected)
+    .select("rect")
+    .attr("stroke","orange")
+    .attr("stroke-width",3);
+}
+draw();
 
-<footer>
-<p>© 2026 Серғали Аяганов</p>
-</footer>
+/* бала қосу */
+function addChild(){
+  if(!selected){alert("Алдымен адамды таңдаңыз");return;}
+  document.getElementById("parentDisplay").innerText=selected.data.name;
+  document.getElementById("childRows").innerHTML="";addRow();
+  document.getElementById("childModal").style.display="flex";
+}
+function addRow(){
+  let div=document.createElement("div");div.className="childRow";
+  div.innerHTML=`<label>Аты</label><input class="name"><label>Жынысы</label><select class="gender"><option value="male">Ұл</option><option value="female">Қыз</option></select><label>Түрі</label><select class="type"><option value="child">Бала</option><option value="nephew">Жиен</option></select>`;
+  document.getElementById("childRows").appendChild(div);
+}
+function confirmAddChild(){
+  const rows=document.querySelectorAll(".childRow");
+  if(!selected.data.children) selected.data.children=[];
+  rows.forEach(row=>{
+    let name=row.querySelector(".name").value.trim(),
+        gender=row.querySelector(".gender").value,
+        type=row.querySelector(".type").value;
+    if(name) selected.data.children.push({name,gender,type});
+  });
+  saveData(); closeModal(); draw();
+}
+function closeModal(){document.getElementById("childModal").style.display="none";}
 
+/* өзгерту */
+function renameNode(){
+  if(!selected) return;
+  let name=prompt("Аты",selected.data.name);
+  if(!name) return;
+  let gender=prompt("Жынысы (male/female)",selected.data.gender);
+  let type=prompt("Түрі (child/nephew)",selected.data.type);
+  selected.data.name=name;
+  selected.data.gender=gender==="female"?"female":"male";
+  selected.data.type=type==="nephew"?"nephew":"child";
+  saveData(); draw();
+}
+
+/* өшіру */
+function deleteNode(){
+  if(!selected){alert("Алдымен адамды таңдаңыз");return;}
+  let personName=selected.data.name;
+  let confirmDelete=confirm(`Сіз "${personName}" адамын өшіргіңіз келе ме?`);
+  if(!confirmDelete) return;
+  function remove(parent,node){
+    if(!parent.children) return;
+    parent.children=parent.children.filter(c=>c!==node.data);
+    parent.children.forEach(c=>remove(c,node));
+  }
+  remove(data,selected); selected=null; saveData(); draw();
+}
+
+/* JSON сақтау */
+function downloadTree(){
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json], {type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="shezhire.json";
+  a.click();
+}
+
+/* PNG сақтау ағымдағы масштаб */
+function exportLargePNG(){
+  const svgNode=document.querySelector("#tree");
+  const serializer=new XMLSerializer();
+  const source=serializer.serializeToString(svgNode);
+  const img=new Image();
+  const canvas=document.createElement("canvas");
+  canvas.width=svgNode.clientWidth*3;
+  canvas.height=svgNode.clientHeight*3;
+  const ctx=canvas.getContext("2d");
+  img.onload=function(){
+    ctx.scale(3,3);
+    ctx.drawImage(img,0,0);
+    const a=document.createElement("a");
+    a.download="shezhire-large.png";
+    a.href=canvas.toDataURL("image/png");
+    a.click();
+  }
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(source);
+}
+
+/* Барлық ағашты сурет ретінде сақтау */
+function downloadTreeAsImage(){
+  exportLargePNG();
+}
+
+/* PDF сақтау */
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  let format = prompt("PDF форматты таңдаңыз (a0,a1,a2,a3,a4):","a4");
+  if(!format) format="a4";
+  const pdf = new jsPDF({ unit:"pt", format:format, orientation:"landscape"});
+  const svgNode=document.querySelector("#tree");
+  const serializer=new XMLSerializer();
+  const source=serializer.serializeToString(svgNode);
+  const img=new Image();
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(source);
+  img.onload=function(){
+    const canvas=document.createElement("canvas");
+    canvas.width=svgNode.clientWidth;
+    canvas.height=svgNode.clientHeight;
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(img,0,0);
+    const imgData=canvas.toDataURL("image/png");
+    pdf.addImage(imgData,'PNG',20,20,pdf.internal.pageSize.getWidth()-40,pdf.internal.pageSize.getHeight()-40);
+    pdf.save("shezhire.pdf");
+  }
+}
+
+/* JSON файл жүктеу */
+document.getElementById("loadJson").addEventListener("change",function(e){
+  let file=e.target.files[0];if(!file)return;
+  let reader=new FileReader();
+  reader.onload=function(event){data=JSON.parse(event.target.result);saveData();draw();alert("Шежіре жүктелді");}
+  reader.readAsText(file);
+});
+</script>
 </body>
 </html>
