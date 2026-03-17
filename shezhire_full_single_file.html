@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<title>Серғали Аяганов сайты</title>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f4f4;}
+header{background:#0a3d62;color:white;padding:20px;text-align:center;}
+nav{background:#1e5f8a;padding:10px;text-align:center;}
+nav a{color:white;margin:15px;text-decoration:none;font-weight:bold;cursor:pointer;}
+section{padding:30px;background:white;margin:20px;border-radius:10px;}
+footer{background:#0a3d62;color:white;text-align:center;padding:15px;}
+
+.node{display:inline-block;padding:8px 15px;margin:5px;background:#7da7d9;border-radius:20px;cursor:pointer;}
+.children{margin-left:30px;display:none;}
+
+.controls button{margin:5px;}
+</style>
+
+</head>
+<body>
+
+<header>
+<h1>Серғали Аяганов</h1>
+<p>Білім, тесттер және шежіре сайты</p>
+</header>
+
+<nav>
+<a onclick="showSection('about')">Мен туралы</a>
+<a onclick="showSection('physics')">Физика</a>
+<a onclick="showSection('informatics')">Информатика</a>
+<a onclick="showSection('genealogy')">Шежіре</a>
+</nav>
+
+<section id="about">
+<h2>Мен туралы</h2>
+<p>Бұл сайтта тесттер және шежіре бар.</p>
+</section>
+
+<section id="physics" style="display:none">
+<h2>Физика</h2>
+<p>Күштің өлшем бірлігі?</p>
+<button onclick="alert('Ньютон')">Жауабы</button>
+</section>
+
+<section id="informatics" style="display:none">
+<h2>Информатика</h2>
+<p>Компьютердің негізгі құрылғысы?</p>
+<button onclick="alert('Жүйелік блок')">Жауабы</button>
+</section>
+
+<section id="genealogy" style="display:none">
+<h2>Шежіре</h2>
+
+<div class="controls">
+<button onclick="enableEdit()">Редактор режимі</button>
+<button onclick="addChild()">Бала қосу</button>
+<button onclick="renameNode()">Атын өзгерту</button>
+<button onclick="save()">Сақтау</button>
+</div>
+
+<div id="tree"></div>
+
+</section>
+
+<footer>
+<p>© 2026</p>
+</footer>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("shezhire"));
+if(!data){ data = {name:"АЛАШ", children:[]}; }
+
+let selected = null;
+let editMode = false;
+
+function showSection(id){
+ document.querySelectorAll('section').forEach(s=>s.style.display='none');
+ document.getElementById(id).style.display='block';
+}
+
+function createNode(node){
+ const div = document.createElement("div");
+
+ const label = document.createElement("div");
+ label.className="node";
+ label.innerText=node.name;
+
+ label.onclick = ()=>{
+   if(editMode){
+     selected=node;
+     alert("Таңдалды: "+node.name);
+   }
+   if(node.childrenDiv){
+     node.childrenDiv.style.display = node.childrenDiv.style.display==='none'?'block':'none';
+   }
+ };
+
+ div.appendChild(label);
+
+ if(node.children && node.children.length){
+   const childrenDiv = document.createElement("div");
+   childrenDiv.className="children";
+   node.childrenDiv = childrenDiv;
+
+   node.children.forEach(c=>childrenDiv.appendChild(createNode(c)));
+
+   div.appendChild(childrenDiv);
+ }
+
+ return div;
+}
+
+function render(){
+ const tree = document.getElementById("tree");
+ tree.innerHTML="";
+ tree.appendChild(createNode(data));
+}
+
+function enableEdit(){
+ const pass = prompt("Құпия сөз:");
+ if(pass==='1234'){
+   editMode=true;
+   alert("Редактор қосылды");
+ } else {
+   alert("Қате пароль");
+ }
+}
+
+function addChild(){
+ if(!editMode) return alert("Алдымен редакторды қос");
+ if(!selected) return alert("Таңда");
+
+ const name = prompt("Аты:");
+ if(!name) return;
+
+ if(!selected.children) selected.children=[];
+ selected.children.push({name, children:[]});
+ render();
+}
+
+function renameNode(){
+ if(!editMode) return alert("Редакторды қос");
+ if(!selected) return alert("Таңда");
+
+ const name = prompt("Жаңа аты:", selected.name);
+ if(!name) return;
+
+ selected.name=name;
+ render();
+}
+
+function save(){
+ localStorage.setItem("shezhire", JSON.stringify(data));
+ alert("Сақталды");
+}
+
+render();
+
+</script>
+
+</body>
+</html>
