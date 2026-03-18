@@ -55,18 +55,66 @@ border:none;
 <div class="container">
 
 <div class="sidebar">
-<a href="about.html" target="frame">Өзім туралы</a>
-<a href="physics.html" target="frame">Физика</a>
-<a href="informatics.html" target="frame">Информатика</a>
-<a href="view.html" target="frame">Шежірені қарау</a>
-<a href="editor.html" target="frame">Шежіре қосу</a>
+<a href="#" onclick="loadPage('about')">Өзім туралы</a>
+<a href="#" onclick="loadPage('physics')">Физика</a>
+<a href="#" onclick="loadPage('informatics')">Информатика</a>
+
+<!-- ЖЕКЕ БЕТ БОЛЫП АШЫЛАДЫ -->
+<a href="#" onclick="openPage('view')">Шежірені қарау</a>
+<a href="#" onclick="openPage('editor')">Шежіре қосу</a>
 </div>
 
 <div class="content">
-<iframe name="frame" src="about.html"></iframe>
+<iframe id="frame"></iframe>
 </div>
 
 </div>
+
+<script>
+// iframe ішіндегі беттер
+function loadPage(page){
+let content = "";
+
+if(page === "about"){
+content = "<h2>Өзім туралы</h2><p>Бұл мен туралы ақпарат.</p>";
+}
+
+if(page === "physics"){
+content = "<h2>Физика</h2><p>Физика материалдары.</p>";
+}
+
+if(page === "informatics"){
+content = "<h2>Информатика</h2><p>Информатика материалдары.</p>";
+}
+
+document.getElementById("frame").srcdoc = content;
+}
+
+// ЖЕКЕ БЕТТЕР (жаңа бет сияқты)
+function openPage(page){
+
+if(page === "view"){
+let newWindow = window.open("");
+newWindow.document.write(`
+<h2>Шежірені қарау</h2>
+<p>Мұнда шежіре көрсетіледі</p>
+`);
+}
+
+if(page === "editor"){
+let newWindow = window.open("");
+newWindow.document.write(`
+<h2>Шежіре қосу</h2>
+<form>
+Аты: <input type="text"><br><br>
+Тегі: <input type="text"><br><br>
+<button>Сақтау</button>
+</form>
+`);
+}
+
+}
+</script>
 
 </body>
 </html>
