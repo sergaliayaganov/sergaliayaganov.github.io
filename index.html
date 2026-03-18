@@ -1,48 +1,46 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<title>Серғали Аяганов сайты</title>
+<title>Серғали сайты</title>
 
 <style>
-body{
-font-family: Arial;
-margin:0;
-background:#f4f4f4;
-}
+body {margin:0;font-family:Arial;}
 
 header{
-background:#0a3d62;
-color:white;
-padding:20px;
-text-align:center;
+background:#0a3d62;color:white;padding:15px;text-align:center;
 }
 
-nav{
+.container{display:flex;}
+
+.sidebar{
+width:250px;
 background:#1e5f8a;
-padding:10px;
-text-align:center;
+height:100vh;
+color:white;
 }
 
-nav a{
+.sidebar a{
+display:block;
+padding:12px;
 color:white;
-margin:15px;
 text-decoration:none;
-font-weight:bold;
+border-bottom:1px solid #ccc;
 }
 
-section{
-padding:30px;
-background:white;
-margin:20px;
-border-radius:10px;
-}
-
-footer{
+.sidebar a:hover{
 background:#0a3d62;
-color:white;
-text-align:center;
-padding:15px;
+}
+
+.content{
+flex:1;
+padding:20px;
+}
+
+iframe{
+width:100%;
+height:90vh;
+border:none;
 }
 </style>
 
@@ -51,54 +49,24 @@ padding:15px;
 <body>
 
 <header>
-<h1>Серғали Аяганов</h1>
-<p>Білім, тесттер және шежіре сайты</p>
+<h2>Аяганов Серғали Қазиұлы</h2>
 </header>
 
-<nav>
-<a href="#about">Мен туралы</a>
-<a href="#physics">Физика тесттері</a>
-<a href="#informatics">Информатика тесттері</a>
-<a href="#genealogy">Шежіре</a>
-</nav>
+<div class="container">
 
-<section id="about">
-<h2>Мен туралы</h2>
-<p>Менің атым Серғали Аяганов. Бұл сайтта физика және информатика пәндері бойынша тест тапсырмалары және Шағалақ ұрпақтарының шежіресі жарияланады.</p>
-</section>
+<div class="sidebar">
+<a href="about.html" target="frame">Өзім туралы</a>
+<a href="physics.html" target="frame">Физика</a>
+<a href="informatics.html" target="frame">Информатика</a>
+<a href="view.html" target="frame">Шежірені қарау</a>
+<a href="editor.html" target="frame">Шежіре қосу</a>
+</div>
 
-<section id="physics">
-<h2>Физика тесттері</h2>
+<div class="content">
+<iframe name="frame" src="about.html"></iframe>
+</div>
 
-<p>1. Күштің өлшем бірлігі?</p>
-<button onclick="alert('Дұрыс жауап: Ньютон')">Жауабын көру</button>
-
-</section>
-
-<section id="informatics">
-<h2>Информатика тесттері</h2>
-
-<p>1. Компьютердің негізгі құрылғысы?</p>
-<button onclick="alert('Жүйелік блок')">Жауабын көру</button>
-
-</section>
-
-<section id="genealogy">
-<h2>Шағалақтың ұрпақтары</h2>
-
-<p>Шежірені көру үшін төмендегі батырманы басыңыз.</p>
-
-<a href="Shezhire.html">Шежірені көру</a>
-
-<p>Шежірені өзгерту үшін төмендегі батырманы басыңыз.</p>
-
-<a href="shezhire_full_single_file.html">Шежірені өзгерту</a>
-
-</section>
-
-<footer>
-<p>© 2026 Серғали Аяганов</p>
-</footer>
+</div>
 
 </body>
 </html>
