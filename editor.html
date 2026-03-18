@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+
+<script>
+const pass = prompt("Пароль:");
+if(pass !== "1234"){
+  document.body.innerHTML="Қолжетімсіз";
+}
+</script>
+
+<h2>Шежіре редакторы</h2>
+
+<button onclick="add()">Бала қосу</button>
+<button onclick="save()">Сақтау</button>
+
+<div id="tree"></div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("shezhire"));
+if(!data){ data = {name:"АЛАШ", children:[]}; }
+
+let selected=null;
+
+function create(node){
+  const div=document.createElement("div");
+
+  const label=document.createElement("div");
+  label.innerText=node.name;
+  label.style.background="lightblue";
+  label.style.margin="5px";
+  label.style.padding="5px";
+  label.style.cursor="pointer";
+
+  label.onclick=()=>{
+    selected=node;
+    alert("Таңдалды: "+node.name);
+  };
+
+  div.appendChild(label);
+
+  if(!node.children) node.children=[];
+
+  const ch=document.createElement("div");
+  ch.style.marginLeft="20px";
+
+  node.children.forEach(c=>{
+    ch.appendChild(create(c));
+  });
+
+  div.appendChild(ch);
+
+  return div;
+}
+
+function render(){
+  const t=document.getElementById("tree");
+  t.innerHTML="";
+  t.appendChild(create(data));
+}
+
+function add(){
+  if(!selected) return alert("Таңда!");
+  const name=prompt("Аты:");
+  selected.children.push({name,children:[]});
+  render();
+}
+
+function save(){
+  localStorage.setItem("shezhire", JSON.stringify(data));
+  alert("Сақталды");
+}
+
+render();
+
+</script>
+
+</body>
+</html>
