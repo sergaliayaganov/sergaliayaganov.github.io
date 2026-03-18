@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+
+<h2>Өзім туралы</h2>
+
+<p>Мен Аяганов Серғали Қазиұлымын.</p>
+
+<textarea id="msg" rows="5" cols="50" placeholder="Хабарлама жаз..."></textarea><br><br>
+<button onclick="save()">Жариялау</button>
+
+<p id="out"></p>
+
+<script>
+function save(){
+  const text = document.getElementById("msg").value;
+  localStorage.setItem("about", text);
+  show();
+}
+
+function show(){
+  document.getElementById("out").innerText =
+    localStorage.getItem("about") || "";
+}
+
+show();
+</script>
+
+</body>
+</html>
