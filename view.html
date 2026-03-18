@@ -1,30 +1,49 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<title>Шежіре</title>
+
+<style>
+.node{
+background:#7da7d9;
+padding:8px;
+margin:5px;
+display:inline-block;
+cursor:pointer;
+border-radius:10px;
+}
+.children{
+margin-left:20px;
+display:none;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Шежіре</h2>
+
+<div id="tree"></div>
+
 <script type="module">
 
+// 🔥 Firebase қосу
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// ⚠️ ОСЫ ЖЕРГЕ ӨЗ CONFIG ҚОЯСЫҢ
 const firebaseConfig = {
-  apiKey: "СЕНІҢ_KEY",
-  authDomain: "СЕНІҢ_DOMAIN",
-  databaseURL: "СЕНІҢ_DB_URL",
-  projectId: "СЕНІҢ_ID"
+  apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
+  authDomain: "shezhire-site.firebaseapp.com",
+  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
+  projectId: "shezhire-site"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔄 базадағы шежірені оқу
-onValue(ref(db, "tree"), (snapshot) => {
-  const data = snapshot.val();
-  render(data);
-});
-
-function render(data){
-  document.getElementById("tree").innerHTML="";
-  document.getElementById("tree").appendChild(create(data));
-}
-
-// 🌳 ағаш функциясы (бұрынғы)
+// 🌳 Ағаш жасау функциясы
 function create(node){
   const div=document.createElement("div");
 
@@ -38,10 +57,13 @@ function create(node){
     const ch=document.createElement("div");
     ch.className="children";
 
-    node.children.forEach(c=>ch.appendChild(create(c)));
+    node.children.forEach(c=>{
+      ch.appendChild(create(c));
+    });
 
     label.onclick=()=>{
-      ch.style.display = ch.style.display==="none"?"block":"none";
+      ch.style.display =
+        ch.style.display==="none"?"block":"none";
     };
 
     div.appendChild(ch);
@@ -50,4 +72,31 @@ function create(node){
   return div;
 }
 
+// 🌳 Экранға шығару
+function render(data){
+  document.getElementById("tree").innerHTML="";
+  document.getElementById("tree").appendChild(create(data));
+}
+
+// 🔄 Firebase-тан оқу
+onValue(ref(db, "tree"), (snapshot) => {
+  const data = snapshot.val();
+
+  if(data){
+    render(data);
+  } else {
+    // ❗ Егер Firebase бос болса → localStorage
+    let local = JSON.parse(localStorage.getItem("shezhire"));
+
+    if(!local){
+      local = {name:"АЛАШ", children:[]};
+    }
+
+    render(local);
+  }
+});
+
 </script>
+
+</body>
+</html>
