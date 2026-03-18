@@ -1,122 +1,125 @@
 <!DOCTYPE html>
 <html lang="kk">
 <head>
-<meta charset="UTF-8">
-<title>Серғали сайты</title>
+    <meta charset="UTF-8">
+    <title>Серғали сайты</title>
 
-<style>
-body {margin:0;font-family:Arial;}
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
 
-header{
-background:#0a3d62;color:white;padding:15px;text-align:center;
-}
+        header {
+            background: #0a3d62;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
 
-.container{display:flex;}
+        .container { display: flex; }
 
-.sidebar{
-width:250px;
-background:#1e5f8a;
-height:100vh;
-color:white;
-}
+        .sidebar {
+            width: 250px;
+            background: #1e5f8a;
+            height: 100vh;
+            color: white;
+        }
 
-.sidebar a{
-display:block;
-padding:12px;
-color:white;
-text-decoration:none;
-border-bottom:1px solid #ccc;
-}
+        .sidebar a {
+            display: block;
+            padding: 12px;
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+        }
 
-.sidebar a:hover{
-background:#0a3d62;
-}
+        .sidebar a:hover {
+            background: #0a3d62;
+        }
 
-.content{
-flex:1;
-padding:20px;
-}
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
 
-iframe{
-width:100%;
-height:90vh;
-border:none;
-}
-</style>
-
+        iframe {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
 </head>
-
 <body>
 
 <header>
-<h2>Аяганов Серғали Қазиұлы</h2>
+    <h2>Аяганов Серғали Қазиұлы</h2>
 </header>
 
 <div class="container">
+    <div class="sidebar">
+        <a onclick="loadPage('about')">Өзім туралы</a>
+        <a onclick="loadPage('physics')">Физика</a>
+        <a onclick="loadPage('informatics')">Информатика</a>
+        <hr>
+        <a onclick="openPage('view')">Шежірені қарау</a>
+        <a onclick="openPage('editor')">Шежіре қосу (Құпия сөзбен)</a>
+    </div>
 
-<div class="sidebar">
-<a href="#" onclick="loadPage('about')">Өзім туралы</a>
-<a href="#" onclick="loadPage('physics')">Физика</a>
-<a href="#" onclick="loadPage('informatics')">Информатика</a>
-
-<!-- ЖЕКЕ БЕТ БОЛЫП АШЫЛАДЫ -->
-<a href="#" onclick="openPage('view')">Шежірені қарау</a>
-<a href="#" onclick="openPage('editor')">Шежіре қосу</a>
-</div>
-
-<div class="content">
-<iframe id="frame"></iframe>
-</div>
-
+    <div class="content">
+        <iframe id="frame"></iframe>
+    </div>
 </div>
 
 <script>
-// iframe ішіндегі беттер
-function loadPage(page){
-let content = "";
+    // Ішкі беттерді iframe-ге жүктеу
+    function loadPage(page) {
+        let content = "";
+        if(page === "about") content = "<h2>Өзім туралы</h2><p>Бұл Серғали Қазиұлы туралы ақпараттық бет.</p>";
+        if(page === "physics") content = "<h2>Физика</h2><p>Физика пәні бойынша оқу материалдары мен тапсырмалар.</p>";
+        if(page === "informatics") content = "<h2>Информатика</h2><p>Информатика және бағдарламалау негіздері.</p>";
+        
+        document.getElementById("frame").srcdoc = content;
+    }
 
-if(page === "about"){
-content = "<h2>Өзім туралы</h2><p>Бұл мен туралы ақпарат.</p>";
-}
+    // Жеке терезеде ашылатын беттер
+    function openPage(page) {
+        if(page === "view") {
+            let newWindow = window.open("", "_blank");
+            newWindow.document.write(`
+                <html><head><title>Шежіре</title></head><body>
+                <h2>Шежірені қарау</h2>
+                <p>Мұнда әулет шежіресінің тізімі көрсетіледі.</p>
+                <button onclick="window.close()">Жабу</button>
+                </body></html>
+            `);
+        }
 
-if(page === "physics"){
-content = "<h2>Физика</h2><p>Физика материалдары.</p>";
-}
+        if(page === "editor") {
+            // Құпия сөзді сұрау
+            let password = prompt("«Шежіре қосу» бетіне кіру үшін құпия сөзді енгізіңіз:");
 
-if(page === "informatics"){
-content = "<h2>Информатика</h2><p>Информатика материалдары.</p>";
-}
+            if(password === "12345") { // Құпия сөз осы жерде
+                let newWindow = window.open("", "_blank");
+                newWindow.document.write(`
+                    <html><head><title>Шежіре қосу</title></head><body>
+                    <h2>Жаңа мәлімет қосу</h2>
+                    <form>
+                        Аты: <input type="text" name="name"><br><br>
+                        Тегі: <input type="text" name="surname"><br><br>
+                        <button type="button" onclick="alert('Мәлімет сақталды!')">Сақтау</button>
+                    </form>
+                    <br>
+                    <button onclick="window.close()">Артқа қайту</button>
+                    </body></html>
+                `);
+            } else if (password !== null) {
+                alert("Құпия сөз қате! Рұқсат берілмеді.");
+            }
+        }
+    }
 
-document.getElementById("frame").srcdoc = content;
-}
-
-// ЖЕКЕ БЕТТЕР (жаңа бет сияқты)
-function openPage(page){
-
-if(page === "view"){
-let newWindow = window.open("");
-newWindow.document.write(`
-<h2>Шежірені қарау</h2>
-<a href="view.html" target="_blank">Шежірені қарау</a>
-
-<p>Мұнда шежіре көрсетіледі</p>
-<a href="editor.html" target="_blank">Шежіре қосу</a>
-`);
-}
-
-if(page === "editor"){
-let newWindow = window.open("");
-newWindow.document.write(`
-<h2>Шежіре қосу</h2>
-<form>
-Аты: <input type="text"><br><br>
-Тегі: <input type="text"><br><br>
-<button>Сақтау</button>
-</form>
-`);
-}
-
-}
+    // Бастапқы бет ретінде "Өзім туралы" ашылып тұрсын
+    window.onload = () => loadPage('about');
 </script>
 
 </body>
