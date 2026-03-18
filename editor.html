@@ -2,6 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
+<title>Шежіре редакторы</title>
 </head>
 <body>
 
@@ -15,17 +16,41 @@ if(pass !== "1234"){
 <h2>Шежіре редакторы</h2>
 
 <button onclick="add()">Бала қосу</button>
-<button onclick="save()">Сақтау</button>
+<button onclick="save()">Сақтау (онлайн)</button>
 
 <div id="tree"></div>
 
-<script>
+<script type="module">
 
-let data = JSON.parse(localStorage.getItem("shezhire"));
-if(!data){ data = {name:"АЛАШ", children:[]}; }
+// 🔥 Firebase қосу
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ⚠️ ОСЫ ЖЕРГЕ ӨЗ CONFIG ҚОЯСЫҢ
+const firebaseConfig = {
+  apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
+  authDomain: "shezhire-site.firebaseapp.com",
+  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
+  projectId: "shezhire-site"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🌐 Firebase-тан оқу
+let data = {name:"АЛАШ", children:[]};
+
+onValue(ref(db, "tree"), (snapshot) => {
+  const val = snapshot.val();
+  if(val){
+    data = val;
+    render();
+  }
+});
 
 let selected=null;
 
+// 🌳 ағаш салу
 function create(node){
   const div=document.createElement("div");
 
@@ -57,25 +82,28 @@ function create(node){
   return div;
 }
 
+// 🌳 экранға шығару
 function render(){
   const t=document.getElementById("tree");
   t.innerHTML="";
   t.appendChild(create(data));
 }
 
-function add(){
+// ➕ бала қосу
+window.add = function(){
   if(!selected) return alert("Таңда!");
   const name=prompt("Аты:");
+  if(!name) return;
+
   selected.children.push({name,children:[]});
   render();
 }
 
-function save(){
-  localStorage.setItem("shezhire", JSON.stringify(data));
-  alert("Сақталды");
+// 💾 Firebase-қа сақтау
+window.save = function(){
+  set(ref(db, "tree"), data);
+  alert("Онлайн сақталды!");
 }
-
-render();
 
 </script>
 
