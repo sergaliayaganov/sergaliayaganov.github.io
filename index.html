@@ -60,6 +60,7 @@
         <a onclick="loadPage('about')">Өзім туралы</a>
         <a onclick="loadPage('physics')">Физика</a>
         <a onclick="loadPage('informatics')">Информатика</a>
+        <a onclick="loadPage('shezhire')">Шежіре жасау</a>
         <hr>
         <a onclick="openPage('view')">Шежірені қарау</a>
         <a onclick="openPage('editor')">Шежіре қосу (Құпия сөзбен)</a>
@@ -77,6 +78,7 @@
         if(page === "about") content = "<h2>Өзім туралы</h2><p>Бұл Серғали Қазиұлы туралы ақпараттық бет.</p>";
         if(page === "physics") content = "<h2>Физика</h2><p>Физика пәні бойынша оқу материалдары мен тапсырмалар.</p>";
         if(page === "informatics") content = "<h2>Информатика</h2><p>Информатика және бағдарламалау негіздері.</p>";
+        if(page === "shezhire") content = "<h2>Шежіре жасау</h2><p>Шағалақтың ұрпақтары.</p>";
         
         document.getElementById("frame").srcdoc = content;
     }
