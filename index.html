@@ -77,7 +77,7 @@ iframe {
 </div>
 
 <script>
-// Ішкі беттер (iframe)
+// Ішкі беттер
 function loadPage(page) {
     let content = "";
 
@@ -86,73 +86,72 @@ function loadPage(page) {
     }
 
     if(page === "physics") {
-        content = "<h2>Физика</h2><p>Физика пәні бойынша оқу материалдары мен тапсырмалар.</p>";
+        content = "<h2>Физика</h2><p>Физика пәні бойынша оқу материалдары.</p>";
     }
 
     if(page === "informatics") {
-        content = "<h2>Информатика</h2><p>Информатика және бағдарламалау негіздері.</p>";
+        content = "<h2>Информатика</h2><p>Бағдарламалау негіздері.</p>";
     }
 
     document.getElementById("frame").srcdoc = content;
 }
 
-// Жеке терезелер
+// ЖАЛҒАН HTML ФАЙЛ ЖАСАУ ФУНКЦИЯСЫ
+function openVirtualPage(htmlContent) {
+    let blob = new Blob([htmlContent], { type: "text/html" });
+    let url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+}
+
+// Жеке беттер
 function openPage(page) {
 
-    // Шежіре жасау
     if(page === "shezhire") {
-        let w = window.open("", "_blank");
-        w.document.write(`
+        openVirtualPage(`
             <html>
-            <head><title>Шежіре жасау</title></head>
+            <head><title>shezhire.html</title></head>
             <body>
-            <h2>Шежірені жасау</h2>
-            <p>Мұнда Шағалақтың ұрпақтарының тізімі көрсетіледі.</p>
+            <h2>Шежіре жасау</h2>
+            <p>Бұл бет shezhire.html сияқты ашылды</p>
             <button onclick="window.close()">Жабу</button>
             </body>
             </html>
         `);
     }
 
-    // Шежірені қарау
     if(page === "view") {
-        let w = window.open("", "_blank");
-        w.document.write(`
+        openVirtualPage(`
             <html>
-            <head><title>Шежіре</title></head>
+            <head><title>view.html</title></head>
             <body>
             <h2>Шежірені қарау</h2>
-            <p>Мұнда әулет шежіресінің тізімі көрсетіледі.</p>
+            <p>Бұл view.html беті</p>
             <button onclick="window.close()">Жабу</button>
             </body>
             </html>
         `);
     }
 
-    // Құпия сөзбен кіру
     if(page === "editor") {
         let password = prompt("Құпия сөзді енгізіңіз:");
 
         if(password === "1S963ak1405") {
-            let w = window.open("", "_blank");
-            w.document.write(`
+            openVirtualPage(`
                 <html>
-                <head><title>Шежіре қосу</title></head>
+                <head><title>editor.html</title></head>
                 <body>
-                <h2>Жаңа мәлімет қосу</h2>
+                <h2>Шежіре қосу</h2>
 
                 <form>
                     Аты: <input type="text"><br><br>
                     Тегі: <input type="text"><br><br>
-
-                    <button type="button" onclick="alert('Мәлімет сақталды!')">
+                    <button type="button" onclick="alert('Сақталды!')">
                         Сақтау
                     </button>
                 </form>
 
                 <br>
                 <button onclick="window.close()">Жабу</button>
-
                 </body>
                 </html>
             `);
@@ -162,7 +161,6 @@ function openPage(page) {
     }
 }
 
-// Бастапқы бет
 window.onload = () => loadPage('about');
 </script>
 
