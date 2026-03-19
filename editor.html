@@ -1,32 +1,45 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<title>Шежіре редакторы</title>
+<title>Шежіре (Firebase)</title>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#f2f2f2;overflow:hidden;}
+#toolbar{position:absolute;top:0;left:0;right:0;background:white;padding:8px;border-bottom:1px solid #ccc;z-index:10;}
+#tree{width:100vw;height:100vh;}
+.node rect{rx:20;ry:20;}
+.node text{font-size:14px;}
+.link{fill:none;stroke:#999;stroke-width:2;}
+.selected rect{stroke:orange;stroke-width:3;}
+</style>
 </head>
+
 <body>
 
-<script>
-const pass = prompt("Пароль:");
-if(pass !== "1S963ak1405"){
-  document.body.innerHTML="Қолжетімсіз";
-}
-</script>
+<div id="toolbar">
+<button onclick="addChild()">Бала қосу</button>
+<button onclick="renameNode()">Атын өзгерту</button>
+<button onclick="deleteNode()">Өшіру</button>
+<button onclick="exportLargePNG()">PNG</button>
+<button onclick="exportPDF()">PDF</button>
+</div>
 
-<h2>Шежіре редакторы</h2>
-
-<button onclick="add()">Бала қосу</button>
-<button onclick="save()">Сақтау (онлайн)</button>
-
-<div id="tree"></div>
+<svg id="tree"></svg>
 
 <script type="module">
 
-// 🔥 Firebase қосу
+// 🔥 Firebase init
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ⚠️ ОСЫ ЖЕРГЕ ӨЗ CONFIG ҚОЯСЫҢ
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -35,75 +48,176 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = getFirestore(app);
 
-// 🌐 Firebase-тан оқу
-let data = {name:"АЛАШ", children:[]};
+// 📦 Дерек
+let data = {
+  name:"Алаш",
+  gender:"male",
+  type:"child",
+  children:[]
+};
 
-onValue(ref(db, "tree"), (snapshot) => {
-  const val = snapshot.val();
-  if(val){
-    data = val;
-    render();
-  }
-});
+async function loadData(){
+  const ref = doc(db,"tree","main");
+  const snap = await getDoc(ref);
+  if(snap.exists()) data = snap.data();
+  draw();
+}
+
+async function saveData(){
+  await setDoc(doc(db,"tree","main"), data);
+}
+
+// 🎨 D3
+const svg=d3.select("#tree");
+const zoomLayer=svg.append("g");
+
+svg.call(d3.zoom().scaleExtent([0.3,3]).on("zoom",e=>{
+  zoomLayer.attr("transform",e.transform);
+}));
 
 let selected=null;
 
-// 🌳 ағаш салу
-function create(node){
-  const div=document.createElement("div");
+function getFill(n){return n.gender==="female"?"#f7a6c6":"#8bb7ff";}
 
-  const label=document.createElement("div");
-  label.innerText=node.name;
-  label.style.background="lightblue";
-  label.style.margin="5px";
-  label.style.padding="5px";
-  label.style.cursor="pointer";
-
-  label.onclick=()=>{
-    selected=node;
-    alert("Таңдалды: "+node.name);
-  };
-
-  div.appendChild(label);
-
-  if(!node.children) node.children=[];
-
-  const ch=document.createElement("div");
-  ch.style.marginLeft="20px";
-
-  node.children.forEach(c=>{
-    ch.appendChild(create(c));
-  });
-
-  div.appendChild(ch);
-
-  return div;
+function toggle(d){
+  if(d.children){d._children=d.children;d.children=null;}
+  else{d.children=d._children;d._children=null;}
 }
 
-// 🌳 экранға шығару
-function render(){
-  const t=document.getElementById("tree");
-  t.innerHTML="";
-  t.appendChild(create(data));
+function draw(){
+  zoomLayer.selectAll("*").remove();
+
+  const root=d3.hierarchy(data);
+  d3.tree().nodeSize([70,240])(root);
+
+  // links
+  zoomLayer.selectAll(".link")
+    .data(root.links())
+    .enter()
+    .append("path")
+    .attr("class","link")
+    .attr("d",d=>{
+      let sx=d.source.y, sy=d.source.x;
+      let ex=d.target.y, ey=d.target.x;
+      return `M ${sx} ${sy} C ${(sx+ex)/2} ${sy}, ${(sx+ex)/2} ${ey}, ${ex} ${ey}`;
+    });
+
+  // nodes
+  const node=zoomLayer.selectAll(".node")
+    .data(root.descendants())
+    .enter().append("g")
+    .attr("class","node")
+    .attr("transform",d=>`translate(${d.y},${d.x})`)
+    .on("click",(e,d)=>{
+      selected=d;
+      toggle(d);
+      draw();
+    });
+
+  node.append("rect")
+    .attr("x",-80).attr("y",-15)
+    .attr("width",160).attr("height",30)
+    .attr("fill",d=>getFill(d.data));
+
+  node.append("text")
+    .attr("text-anchor","middle")
+    .attr("dy","0.35em")
+    .text(d=>d.data.name);
 }
 
 // ➕ бала қосу
-window.add = function(){
-  if(!selected) return alert("Таңда!");
-  const name=prompt("Аты:");
+function addChild(){
+  if(!selected) return alert("Таңдаңыз");
+
+  let name=prompt("Аты");
   if(!name) return;
 
-  selected.children.push({name,children:[]});
-  render();
+  if(!selected.data.children) selected.data.children=[];
+
+  selected.data.children.push({
+    name,
+    gender:"male",
+    type:"child"
+  });
+
+  saveData();
+  draw();
 }
 
-// 💾 Firebase-қа сақтау
-window.save = function(){
-  set(ref(db, "tree"), data);
-  alert("Онлайн сақталды!");
+// ✏️ өзгерту
+function renameNode(){
+  if(!selected) return;
+  let name=prompt("Жаңа аты",selected.data.name);
+  if(name){
+    selected.data.name=name;
+    saveData();
+    draw();
+  }
 }
+
+// ❌ өшіру
+function deleteNode(){
+  if(!selected) return;
+
+  function remove(parent,node){
+    if(!parent.children) return;
+    parent.children=parent.children.filter(c=>c!==node.data);
+    parent.children.forEach(c=>remove(c,node));
+  }
+
+  remove(data,selected);
+  selected=null;
+
+  saveData();
+  draw();
+}
+
+// 📸 PNG
+function exportLargePNG(){
+  const svgNode=document.querySelector("#tree");
+  const s=new XMLSerializer().serializeToString(svgNode);
+  const img=new Image();
+
+  img.onload=function(){
+    const canvas=document.createElement("canvas");
+    canvas.width=2000;
+    canvas.height=2000;
+    canvas.getContext("2d").drawImage(img,0,0);
+    const a=document.createElement("a");
+    a.href=canvas.toDataURL();
+    a.download="tree.png";
+    a.click();
+  }
+
+  img.src='data:image/svg+xml,'+encodeURIComponent(s);
+}
+
+// 📄 PDF
+function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF();
+
+  const svgNode=document.querySelector("#tree");
+  const s=new XMLSerializer().serializeToString(svgNode);
+  const img=new Image();
+
+  img.onload=function(){
+    const canvas=document.createElement("canvas");
+    canvas.width=1000;
+    canvas.height=1000;
+    canvas.getContext("2d").drawImage(img,0,0);
+
+    pdf.addImage(canvas.toDataURL(),"PNG",10,10,180,160);
+    pdf.save("tree.pdf");
+  }
+
+  img.src='data:image/svg+xml,'+encodeURIComponent(s);
+}
+
+// 🚀 жүктеу
+loadData();
 
 </script>
 
