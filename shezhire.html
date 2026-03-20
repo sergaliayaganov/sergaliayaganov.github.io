@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
@@ -105,7 +105,21 @@ function update(){
 g.selectAll("*").remove();
 if(!data) return;
 const root=d3.hierarchy(data,d=>d.children);
-const treeLayout=d3.tree().nodeSize([60,180]);
+
+// 🔥 ең ұзын атты табу
+let maxNameLength = 0;
+root.descendants().forEach(d => {
+    if(d.data.name.length > maxNameLength){
+        maxNameLength = d.data.name.length;
+    }
+});
+
+// 🔥 динамикалық горизонталь арақашықтық
+const dynamicWidth = Math.max(180, maxNameLength * 12);
+
+// 🌳 layout
+const treeLayout = d3.tree().nodeSize([60, dynamicWidth]);
+
 treeLayout(root);
 if(!selected) selected=root;
 
