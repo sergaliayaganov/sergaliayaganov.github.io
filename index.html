@@ -61,8 +61,8 @@
         <a onclick="loadPage('physics')">Физика</a>
         <a onclick="loadPage('informatics')">Информатика</a>
         <hr>
-        <a onclick="openPage('view')">Шежірені қарау</a>
-        <a onclick="openPage('editor')">Шежіре қосу (Құпия сөзбен)</a>
+        <a onclick="openPage('view.html')">Шежірені қарау</a>
+        <a onclick="openPage('shezhire.html')">Шежіре қосу</a>
     </div>
 
     <div class="content">
@@ -71,54 +71,38 @@
 </div>
 
 <script>
-    // Ішкі беттерді iframe-ге жүктеу
     function loadPage(page) {
         let content = "";
-        if(page === "about") content = "<h2>Өзім туралы</h2><p>Бұл Серғали Қазиұлы туралы ақпараттық бет.</p>";
-        if(page === "physics") content = "<h2>Физика</h2><p>Физика пәні бойынша оқу материалдары мен тапсырмалар.</p>";
-        if(page === "informatics") content = "<h2>Информатика</h2><p>Информатика және бағдарламалау негіздері.</p>";
-        
+
+        if(page === "about") {
+            content = `
+                <h2>Өзім туралы</h2>
+                <p>Бұл Серғали Қазиұлы туралы ақпараттық бет.</p>
+            `;
+        }
+
+        if(page === "physics") {
+            content = `
+                <h2>Физика</h2>
+                <p>Физика пәні бойынша оқу материалдары мен тапсырмалар.</p>
+            `;
+        }
+
+        if(page === "informatics") {
+            content = `
+                <h2>Информатика</h2>
+                <p>Информатика және бағдарламалау негіздері.</p>
+            `;
+        }
+
         document.getElementById("frame").srcdoc = content;
     }
 
-    // Жеке терезеде ашылатын беттер
-    function openPage(page) {
-        if(page === "view") {
-            let newWindow = window.open("", "_blank");
-            newWindow.document.write(`
-                <html><head><title>Шежіре</title></head><body>
-                <h2>Шежірені қарау</h2>
-                <p>Мұнда әулет шежіресінің тізімі көрсетіледі.</p>
-                <button onclick="window.close()">Жабу</button>
-                </body></html>
-            `);
-        }
-
-        if(page === "editor") {
-            // Құпия сөзді сұрау
-            let password = prompt("«Шежіре қосу» бетіне кіру үшін құпия сөзді енгізіңіз:");
-
-            if(password === "1S963ak1405") { // Құпия сөз осы жерде
-                let newWindow = window.open("", "_blank");
-                newWindow.document.write(`
-                    <html><head><title>Шежіре қосу</title></head><body>
-                    <h2>Жаңа мәлімет қосу</h2>
-                    <form>
-                        Аты: <input type="text" name="name"><br><br>
-                        Тегі: <input type="text" name="surname"><br><br>
-                        <button type="button" onclick="alert('Мәлімет сақталды!')">Сақтау</button>
-                    </form>
-                    <br>
-                    <button onclick="window.close()">Артқа қайту</button>
-                    </body></html>
-                `);
-            } else if (password !== null) {
-                alert("Құпия сөз қате! Рұқсат берілмеді.");
-            }
-        }
+    // ЕНДІ нақты HTML файлдарға ашады
+    function openPage(url) {
+        window.open(url, "_blank");
     }
 
-    // Бастапқы бет ретінде "Өзім туралы" ашылып тұрсын
     window.onload = () => loadPage('about');
 </script>
 
