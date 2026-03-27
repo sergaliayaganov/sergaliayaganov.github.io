@@ -114,7 +114,8 @@ g.selectAll("*").remove();
 if(!data) return;
 
 const root=d3.hierarchy(data,d=>d.children);
-d3.tree().nodeSize([80,220])(root);
+const horizontalGap = nodeWidth + 120; // 🔥 арақашықтық
+d3.tree().nodeSize([80, horizontalGap])(root);
 
 // 🔥 ЕҢ ҰЗЫН ЕСІМ
 let maxLen=0;
