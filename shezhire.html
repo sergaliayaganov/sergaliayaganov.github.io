@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <title>Шежіре FINAL PRO</title>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
 <style>
@@ -11,31 +13,52 @@ body {
   margin: 0;
   font-family: Arial;
   background: #f2f2f2;
+  overflow: hidden;
 }
 #toolbar {
-  padding: 10px;
+  position: absolute;
+  top: 0; left: 0; right: 0;
   background: white;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
 }
 #tree {
   width: 100vw;
-  height: 90vh;
+  height: 100vh;
+}
+
+.node rect {
+  fill-opacity: 0.35;
+  stroke-width: 2;
 }
 .node text {
+  font-size: 14px;
   font-weight: bold;
+  pointer-events: none;
 }
 .link {
   fill: none;
   stroke: #999;
+  stroke-width: 2;
 }
+
 #modal {
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   background: white;
   padding: 20px;
-  display: none;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  display: none;
+  width: 300px;
+}
+.childItem {
+  background: #eee;
+  margin: 5px 0;
+  padding: 5px 10px;
+  border-radius: 5px;
 }
 </style>
 </head>
@@ -51,16 +74,31 @@ body {
 <svg id="tree"></svg>
 
 <div id="modal">
+  <h3>Бірнеше бала қосу</h3>
+
   <input id="childName" placeholder="Аты" />
-  <button id="confirm">Қосу</button>
+  <select id="gender">
+    <option value="male">ер</option>
+    <option value="female">әйел</option>
+  </select>
+  <select id="type">
+    <option value="бала">бала</option>
+    <option value="жиен">жиен</option>
+  </select>
+
+  <br /><br />
+  <button id="addMore">+ Қосу</button>
+  <button id="confirm">Дайын</button>
   <button id="close">Жабу</button>
+
+  <div id="list"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔥 Firebase конфиг
+// Firebase конфиг
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -75,149 +113,220 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let data, root, selected;
+let data = null;
+let selected = null;
+let root = null;  // Иерархияны сақтау үшін
+
 const svg = d3.select("#tree");
 const g = svg.append("g");
+
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-function autoSave(){
-  set(ref(db,"tree"), data);
-}
-
-// Collapse nodes deeper than level 1
-function collapse(d, level=0){
-  if(d.children){
-    if(level>=1){
-      d._children=d.children;
-      d.children=null;
-    } else {
-      d.children.forEach(c=>collapse(c,level+1));
-    }
-  }
-}
-
-// 📥 load data
-onValue(ref(db,"tree"), snap=>{
-  if(snap.exists()){
-    data=snap.val();
+// Деректерді жүктеу, егер жоқ болса root-ты орнату
+onValue(ref(db, "tree"), snap => {
+  if (snap.exists()) {
+    data = snap.val();
   } else {
-    data={
-      name:"АЛАШ",
-      children:[
-        {name:"Сейілхан",children:[]},
-        {name:"Жайлыхан",children:[]}
+    data = {
+      name: "АЛАШ",
+      gender: "male",
+      type: "бала",
+      children: [
+        { name: "Сейілхан", gender: "male", type: "бала", children: [] },
+        { name: "Жайлыхан", gender: "male", type: "бала", children: [] }
       ]
     };
-    autoSave();
+    set(ref(db, "tree"), data);
   }
-  root=d3.hierarchy(data);
-  collapse(root); // level>1 collapse
-  selected=root;
+  // Иерархияны жаңарту және root-ты сақтау
+  root = d3.hierarchy(data, d => d.children);
+  selected = root; // root таңдау
   update();
 });
 
-function toggle(d){
-  if(d.children){
-    d._children=d.children;
-    d.children=null;
-  } else {
-    d.children=d._children;
-    d._children=null;
+function toggle(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else if (d._children) {
+    d.children = d._children;
+    d._children = null;
   }
 }
 
-function update(){
+function update() {
   g.selectAll("*").remove();
-  if(!data) return;
+  if (!data) return;
 
-  // Calculate max name length for auto width
-  let maxLen=0;
-  root.descendants().forEach(d=>{
-    if(d.data.name.length>maxLen) maxLen=d.data.name.length;
+  // Ең ұзын есім
+  let maxLen = 0;
+  d3.hierarchy(data).descendants().forEach(d => {
+    if (d.data.name.length > maxLen) maxLen = d.data.name.length;
   });
 
-  const nodeWidth=Math.max(120,maxLen*8+40);
-  const nodeHeight=40;
+  const charWidth = 9;
+  const padding = 40;
+  const nodeWidth = Math.max(120, maxLen * charWidth + padding);
+  const nodeHeight = 40;
+  const radius = nodeHeight / 2;
 
-  // Tree layout
-  d3.tree().nodeSize([80,nodeWidth+40])(root);
+  // Горизонталь арақашықтық
+  const horizontalGap = nodeWidth + 120;
+  const verticalGap = 80;
 
-  // Center parent over children
-  root.each(d=>{
-    if(d.children && d.children.length>0){
-      const minX=d3.min(d.children, c=>c.y);
-      const maxX=d3.max(d.children, c=>c.y);
-      d.y=(minX+maxX)/2;
-    }
-  });
+  // Деректерді іерархияға айналдыру
+  root = d3.hierarchy(data, d => d.children);
+  d3.tree().nodeSize([verticalGap, horizontalGap])(root);
 
-  // Links
+  // Таңдалған түйінді қалпына келтіру
+  if (selected) {
+    let found = null;
+    root.each(d => {
+      if (d.data === selected.data) found = d;
+    });
+    selected = found || root;
+  } else {
+    selected = root;
+  }
+
+  // Линктер сызу
   g.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
-    .attr("class","link")
-    .attr("d", d=>{
-      const sx=d.source.y+nodeWidth/2;
-      const sy=d.source.x;
-      const ex=d.target.y-nodeWidth/2;
-      const ey=d.target.x;
-      const mx=(sx+ex)/2;
+    .attr("class", "link")
+    .attr("stroke", d => (d.target.data.type === "жиен" ? "gold" : "#999"))
+    .attr("stroke-width", d => (d.target.data.type === "жиен" ? 4 : 2))
+    .attr("d", d => {
+      const p = d.source;
+      const c = d.target;
+
+      const sx = p.y + nodeWidth / 2;
+      const sy = p.x;
+
+      const ex = c.y - nodeWidth / 2;
+      const ey = c.x;
+
+      const mx = (sx + ex) / 2;
+
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
-  // Nodes
-  const nodes=g.selectAll(".node")
+  // Түйіндер сызу
+  const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
     .append("g")
-    .attr("transform", d=>`translate(${d.y},${d.x})`)
-    .on("click",(e,d)=>{
-      selected=d;
-      toggle(d);
+    .attr("class", "node")
+    .attr("transform", d => `translate(${d.y},${d.x})`)
+    .on("click", (event, d) => {
+      selected = d;
+      toggle(d.data);
       update();
     });
 
-  nodes.append("rect")
-    .attr("x",-nodeWidth/2)
-    .attr("y",-nodeHeight/2)
-    .attr("width",nodeWidth)
-    .attr("height",nodeHeight)
-    .attr("rx",20)
-    .attr("fill","#8bb7ff");
+  nodes.each(function(d) {
+    const group = d3.select(this);
 
-  nodes.append("text")
-    .attr("text-anchor","middle")
-    .attr("dy","0.35em")
-    .text(d=>d.data.name);
+    group.append("rect")
+      .attr("x", -nodeWidth / 2)
+      .attr("y", -nodeHeight / 2)
+      .attr("width", nodeWidth)
+      .attr("height", nodeHeight)
+      .attr("rx", radius)
+      .attr("ry", radius)
+      .attr("fill", d.data.gender === "female" ? "#f7a6c6" : "#8bb7ff")
+      .attr("stroke", d.data.type === "жиен" ? "gold" : (d.data.gender === "female" ? "#d95380" : "#3b70d6"))
+      .attr("stroke-width", d.data.type === "жиен" ? 4 : 2);
+
+    group.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", 5)
+      .text(d.data.name);
+  });
 }
 
-// UI
-const modal=document.getElementById("modal");
+// --- Мульти бала қосу модалы ---
+const modal = document.getElementById("modal");
+const list = document.getElementById("list");
 
-document.getElementById("addChildBtn").onclick=()=>{ modal.style.display="block"; };
-document.getElementById("confirm").onclick=()=>{
-  const name=document.getElementById("childName").value;
-  if(!name) return;
-  if(!selected.data.children) selected.data.children=[];
-  selected.data.children.push({name,children:[]});
-  root=d3.hierarchy(data);
-  update();
-  autoSave();
-  modal.style.display="none";
+let tempChildren = [];
+
+document.getElementById("addChildBtn").onclick = () => {
+  if (!selected) {
+    alert("Адам таңдаңыз");
+    return;
+  }
+  modal.style.display = "block";
+  tempChildren = [];
+  list.innerHTML = "";
+  clearInputs();
 };
-document.getElementById("renameBtn").onclick=()=>{
-  if(!selected) return;
-  const name=prompt("Жаңа аты:",selected.data.name);
-  if(name){
-    selected.data.name=name;
-    root=d3.hierarchy(data);
+
+document.getElementById("addMore").onclick = () => {
+  const nameInput = document.getElementById("childName");
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert("Аты жазылуы тиіс");
+    return;
+  }
+  const gender = document.getElementById("gender").value;
+  const type = document.getElementById("type").value;
+
+  tempChildren.push({ name, gender, type });
+
+  const div = document.createElement("div");
+  div.className = "childItem";
+  div.textContent = `${name} (${gender === "male" ? "ер" : "әйел"}, ${type})`;
+  list.appendChild(div);
+
+  nameInput.value = "";
+  nameInput.focus();
+};
+
+document.getElementById("confirm").onclick = () => {
+  if (tempChildren.length === 0) {
+    alert("Кем дегенде бір бала қосыңыз");
+    return;
+  }
+  tempChildren.forEach(c => {
+    if (!selected.data.children) selected.data.children = [];
+    selected.data.children.push({ ...c, children: [] });
+  });
+  modal.style.display = "none";
+  update();
+};
+
+document.getElementById("close").onclick = () => {
+  modal.style.display = "none";
+};
+
+document.getElementById("renameBtn").onclick = () => {
+  if (!selected) {
+    alert("Түйінді таңдаңыз");
+    return;
+  }
+  const newName = prompt("Жаңа аты:", selected.data.name);
+  if (newName && newName.trim()) {
+    selected.data.name = newName.trim();
     update();
-    autoSave();
   }
 };
-document.getElementById("close").onclick=()=>{ modal.style.display="none"; };
 
+document.getElementById("saveBtn").onclick = () => {
+  if (!data) {
+    alert("Сақтауға ештеңе жоқ");
+    return;
+  }
+  set(ref(db, "tree"), data);
+  alert("Сақталды");
+};
+
+function clearInputs() {
+  document.getElementById("childName").value = "";
+  document.getElementById("gender").value = "male";
+  document.getElementById("type").value = "бала";
+}
 </script>
 </body>
 </html>
