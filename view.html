@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежірені қарау</title>
+<title>Шежіре (FINAL FIX)</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -21,7 +21,6 @@ body {
 
 .node rect {
   fill-opacity: 0.35;
-  stroke-width: 2;
 }
 
 .node text {
@@ -58,24 +57,49 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let data = null;
+let root;
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
 
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// 📥 оқу
+// 🔥 Бастапқы collapse (1-деңгей ғана ашық)
+function collapseAll(d, level = 0) {
+  if (d.children) {
+    if (level >= 1) {
+      d._children = d.children;
+      d._children.forEach(child => collapseAll(child, level + 1));
+      d.children = null;
+    } else {
+      d.children.forEach(child => collapseAll(child, level + 1));
+    }
+  }
+}
+
+// Firebase оқу
 onValue(ref(db, "tree"), snap => {
+  let data;
+
   if (snap.exists()) {
     data = snap.val();
   } else {
-    data = { name: "АЛАШ", children: [] };
+    data = {
+      name: "АЛАШ",
+      children: [
+        { name: "Сейілхан", children: [] },
+        { name: "Жайлыхан", children: [] }
+      ]
+    };
   }
+
+  root = d3.hierarchy(data);
+  collapseAll(root); // 🔥 тек бірінші деңгей ашық
+
   update();
 });
 
-// 🔥 toggle (дұрыс жұмыс істейтін)
+// toggle
 function toggle(d) {
   if (d.children) {
     d._children = d.children;
@@ -86,14 +110,12 @@ function toggle(d) {
   }
 }
 
-// 🌳 draw
+// draw
 function update() {
+
   g.selectAll("*").remove();
-  if (!data) return;
 
-  const root = d3.hierarchy(data, d => d.children);
-
-  // 🔥 ұзын текстке қарай ен есептеу
+  // 🔥 ең ұзын текст
   let maxLen = 0;
   root.descendants().forEach(d => {
     if (d.data.name.length > maxLen) maxLen = d.data.name.length;
@@ -103,10 +125,8 @@ function update() {
   const nodeWidth = Math.max(120, maxLen * charWidth + 40);
   const nodeHeight = 40;
 
-  const horizontalGap = nodeWidth + 100;
-
-  // 🔥 layout
-  d3.tree().nodeSize([80, horizontalGap])(root);
+  const treeLayout = d3.tree().nodeSize([80, nodeWidth + 120]);
+  treeLayout(root);
 
   // 🔥 сызық
   g.selectAll(".link")
@@ -114,8 +134,6 @@ function update() {
     .enter()
     .append("path")
     .attr("class", "link")
-    .attr("stroke", d => d.target.data.type === "жиен" ? "gold" : "#999")
-    .attr("stroke-width", d => d.target.data.type === "жиен" ? 4 : 2)
     .attr("d", d => {
       const startX = d.source.y + nodeWidth / 2;
       const startY = d.source.x;
@@ -135,29 +153,35 @@ function update() {
 
   // 🔥 node
   const nodes = g.selectAll(".node")
-    .data(root.descendants())
-    .enter()
+    .data(root.descendants(), d => d.data.name);
+
+  const enter = nodes.enter()
     .append("g")
+    .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`)
     .on("click", (event, d) => {
       toggle(d);
       update();
     });
 
-  nodes.append("rect")
+  enter.append("rect")
     .attr("x", -nodeWidth / 2)
     .attr("y", -nodeHeight / 2)
     .attr("width", nodeWidth)
     .attr("height", nodeHeight)
     .attr("rx", nodeHeight / 2)
-    .attr("fill", d => d.data.gender === "female" ? "#f7a6c6" : "#8bb7ff")
-    .attr("stroke", d => d.data.type === "жиен" ? "gold" : "#3b70d6")
-    .attr("stroke-width", d => d.data.type === "жиен" ? 4 : 2);
+    .attr("fill", "#8bb7ff")
+    .attr("stroke", "#3b70d6")
+    .attr("stroke-width", 2);
 
-  nodes.append("text")
+  enter.append("text")
     .attr("text-anchor", "middle")
     .attr("dy", "0.35em")
     .text(d => d.data.name);
+
+  nodes.merge(enter)
+    .transition()
+    .attr("transform", d => `translate(${d.y},${d.x})`);
 }
 
 </script>
