@@ -115,6 +115,7 @@ const db = getDatabase(app);
 
 let data = null;
 let selected = null;
+let root = null;  // Иерархияны сақтау үшін
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
@@ -137,7 +138,9 @@ onValue(ref(db, "tree"), snap => {
     };
     set(ref(db, "tree"), data);
   }
-  selected = null;
+  // Иерархияны жаңарту және root-ты сақтау
+  root = d3.hierarchy(data, d => d.children);
+  selected = root; // root таңдау
   update();
 });
 
@@ -172,8 +175,19 @@ function update() {
   const verticalGap = 80;
 
   // Деректерді іерархияға айналдыру
-  const root = d3.hierarchy(data, d => d.children);
+  root = d3.hierarchy(data, d => d.children);
   d3.tree().nodeSize([verticalGap, horizontalGap])(root);
+
+  // Таңдалған түйінді қалпына келтіру
+  if (selected) {
+    let found = null;
+    root.each(d => {
+      if (d.data === selected.data) found = d;
+    });
+    selected = found || root;
+  } else {
+    selected = root;
+  }
 
   // Линктер сызу
   g.selectAll(".link")
