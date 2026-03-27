@@ -47,7 +47,7 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔥 Firebase
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -65,27 +65,22 @@ const g = svg.append("g");
 
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// 📥 Firebase-тан оқу
+// 📥 оқу
 onValue(ref(db, "tree"), snap => {
   if (snap.exists()) {
     data = snap.val();
   } else {
-    data = {
-      name: "АЛАШ",
-      gender: "male",
-      type: "бала",
-      children: []
-    };
+    data = { name: "АЛАШ", children: [] };
   }
   update();
 });
 
-// 🌳 ашу/жабу
+// 🔥 toggle (дұрыс жұмыс істейтін)
 function toggle(d) {
   if (d.children) {
     d._children = d.children;
     d.children = null;
-  } else if (d._children) {
+  } else {
     d.children = d._children;
     d._children = null;
   }
@@ -98,12 +93,22 @@ function update() {
 
   const root = d3.hierarchy(data, d => d.children);
 
-  // 🔥 Горизонталь layout
-  d3.tree().nodeSize([80, 250])(root);
+  // 🔥 ұзын текстке қарай ен есептеу
+  let maxLen = 0;
+  root.descendants().forEach(d => {
+    if (d.data.name.length > maxLen) maxLen = d.data.name.length;
+  });
 
-  const nodeWidth = 120;
+  const charWidth = 8;
+  const nodeWidth = Math.max(120, maxLen * charWidth + 40);
+  const nodeHeight = 40;
 
-  // 🔥 СЫЗЫҚТАР (ортасынан)
+  const horizontalGap = nodeWidth + 100;
+
+  // 🔥 layout
+  d3.tree().nodeSize([80, horizontalGap])(root);
+
+  // 🔥 сызық
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -128,7 +133,7 @@ function update() {
       `;
     });
 
-  // 🔥 NODE
+  // 🔥 node
   const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -141,17 +146,17 @@ function update() {
 
   nodes.append("rect")
     .attr("x", -nodeWidth / 2)
-    .attr("y", -20)
+    .attr("y", -nodeHeight / 2)
     .attr("width", nodeWidth)
-    .attr("height", 40)
-    .attr("rx", 20)
+    .attr("height", nodeHeight)
+    .attr("rx", nodeHeight / 2)
     .attr("fill", d => d.data.gender === "female" ? "#f7a6c6" : "#8bb7ff")
     .attr("stroke", d => d.data.type === "жиен" ? "gold" : "#3b70d6")
     .attr("stroke-width", d => d.data.type === "жиен" ? 4 : 2);
 
   nodes.append("text")
     .attr("text-anchor", "middle")
-    .attr("dy", 5)
+    .attr("dy", "0.35em")
     .text(d => d.data.name);
 }
 
