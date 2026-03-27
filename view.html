@@ -9,84 +9,80 @@ body{
     font-family: Arial;
 }
 
-/* Түйін */
-.node{
-    padding:6px 12px;
-    border:1px solid #2c5d85;
-    display:inline-block;
-    border-radius:8px;
-    background:#e3f2fd;
-    cursor:pointer;
+/* Ағаш контейнер */
+.tree ul {
+    padding-top: 20px;
+    position: relative;
+    list-style: none;
+    text-align: center;
 }
 
-/* Ағаш стилі */
-.tree ul{
-    padding-top:20px;
-    position:relative;
-    list-style:none;
-}
-
-.tree li{
-    float:left;
-    text-align:center;
-    list-style-type:none;
-    position:relative;
-    padding:20px 5px 0 5px;
+.tree li {
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    position: relative;
+    padding: 20px 5px 0 5px;
 }
 
 /* Сызықтар */
-.tree li::before, .tree li::after{
-    content:'';
-    position:absolute;
-    top:0;
-    right:50%;
-    border-top:2px solid #999;
-    width:50%;
-    height:20px;
+.tree li::before,
+.tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    border-top: 2px solid #999;
+    width: 50%;
+    height: 20px;
 }
 
-.tree li::after{
-    right:auto;
-    left:50%;
-    border-left:2px solid #999;
+.tree li::before {
+    right: 50%;
 }
 
-.tree li:only-child::after, 
-.tree li:only-child::before{
-    display:none;
+.tree li::after {
+    left: 50%;
+    border-left: 2px solid #999;
 }
 
-.tree li:only-child{
-    padding-top:0;
+/* Бір бала болса */
+.tree li:only-child::before,
+.tree li:only-child::after {
+    display: none;
 }
 
-.tree li:first-child::before,
-.tree li:last-child::after{
-    border:none;
+/* Шеттер */
+.tree li:first-child::before {
+    border: none;
+}
+.tree li:last-child::after {
+    border: none;
 }
 
-.tree li:last-child::before{
-    border-right:2px solid #999;
-    border-radius:0 5px 0 0;
+/* Тік сызық */
+.tree ul ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 2px solid #999;
+    width: 0;
+    height: 20px;
 }
 
-.tree li:first-child::after{
-    border-radius:5px 0 0 0;
-}
-
-.tree ul ul::before{
-    content:'';
-    position:absolute;
-    top:0;
-    left:50%;
-    border-left:2px solid #999;
-    width:0;
-    height:20px;
+/* Нод */
+.node {
+    border: 1px solid #2c5d85;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-block;
+    background: #e3f2fd;
+    cursor: pointer;
 }
 
 /* Балалар */
-.children{
-    display:none;
+.children {
+    display: none;
 }
 </style>
 
@@ -99,24 +95,20 @@ body{
 
 <script type="module">
 
-// 🔥 Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
+  apiKey: "AIzaSy...",
   authDomain: "shezhire-site.firebaseapp.com",
   databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "shezhire-site",
-  storageBucket: "shezhire-site.firebasestorage.app",
-  messagingSenderId: "714823841418",
-  appId: "1:714823841418:web:99333d2aba6d57857b1f73"
+  projectId: "shezhire-site"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🌳 Рекурсивті ағаш
+// 🌳 Ағаш құру (UL/LI НҰСҚА!)
 function createTree(node){
     const li = document.createElement("li");
 
@@ -156,7 +148,7 @@ function render(data){
     tree.appendChild(ul);
 }
 
-// 🔄 Firebase оқу (ТЕК КӨРУ)
+// 🔄 Firebase
 onValue(ref(db, "tree"), (snapshot) => {
     const data = snapshot.val();
 
