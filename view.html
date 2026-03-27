@@ -2,19 +2,90 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<title>Шежіре</title>
+<title>Шежірені қарау</title>
 
 <style>
-.node{
-    background:#7da7d9;
-    padding:8px;
-    margin:5px;
-    display:inline-block;
-    cursor:pointer;
-    border-radius:10px;
+body{
+    font-family: Arial;
 }
+
+/* Түйін */
+.node{
+    padding:6px 12px;
+    border:1px solid #2c5d85;
+    display:inline-block;
+    border-radius:8px;
+    background:#e3f2fd;
+    cursor:pointer;
+}
+
+/* Ағаш стилі */
+.tree ul{
+    padding-top:20px;
+    position:relative;
+    list-style:none;
+}
+
+.tree li{
+    float:left;
+    text-align:center;
+    list-style-type:none;
+    position:relative;
+    padding:20px 5px 0 5px;
+}
+
+/* Сызықтар */
+.tree li::before, .tree li::after{
+    content:'';
+    position:absolute;
+    top:0;
+    right:50%;
+    border-top:2px solid #999;
+    width:50%;
+    height:20px;
+}
+
+.tree li::after{
+    right:auto;
+    left:50%;
+    border-left:2px solid #999;
+}
+
+.tree li:only-child::after, 
+.tree li:only-child::before{
+    display:none;
+}
+
+.tree li:only-child{
+    padding-top:0;
+}
+
+.tree li:first-child::before,
+.tree li:last-child::after{
+    border:none;
+}
+
+.tree li:last-child::before{
+    border-right:2px solid #999;
+    border-radius:0 5px 0 0;
+}
+
+.tree li:first-child::after{
+    border-radius:5px 0 0 0;
+}
+
+.tree ul ul::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:50%;
+    border-left:2px solid #999;
+    width:0;
+    height:20px;
+}
+
+/* Балалар */
 .children{
-    margin-left:20px;
     display:none;
 }
 </style>
@@ -22,17 +93,16 @@
 </head>
 <body>
 
-<h2>Шежіре</h2>
+<h2>Шежірені қарау</h2>
 
-<div id="tree"></div>
+<div class="tree" id="tree"></div>
 
 <script type="module">
 
-// 🔥 Firebase қосу
+// 🔥 Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ✅ ДҰРЫС CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -40,57 +110,59 @@ const firebaseConfig = {
   projectId: "shezhire-site",
   storageBucket: "shezhire-site.firebasestorage.app",
   messagingSenderId: "714823841418",
-  appId: "1:714823841418:web:99333d2aba6d57857b1f73",
-  measurementId: "G-8V6NR3MHYC"
+  appId: "1:714823841418:web:99333d2aba6d57857b1f73"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🌳 Ағаш жасау функциясы
-function create(node){
-    const div = document.createElement("div");
+// 🌳 Рекурсивті ағаш
+function createTree(node){
+    const li = document.createElement("li");
 
     const label = document.createElement("div");
     label.className = "node";
     label.innerText = node.name;
 
-    div.appendChild(label);
+    li.appendChild(label);
 
     if(node.children && node.children.length > 0){
-        const ch = document.createElement("div");
-        ch.className = "children";
+        const ul = document.createElement("ul");
+        ul.className = "children";
 
-        node.children.forEach(c=>{
-            ch.appendChild(create(c));
+        node.children.forEach(child=>{
+            ul.appendChild(createTree(child));
         });
 
         label.onclick = ()=>{
-            ch.style.display =
-            ch.style.display === "none" ? "block" : "none";
+            ul.style.display =
+            ul.style.display === "none" ? "block" : "none";
         };
 
-        div.appendChild(ch);
+        li.appendChild(ul);
     }
 
-    return div;
+    return li;
 }
 
-// 🌳 Экранға шығару
+// 🌳 Рендер
 function render(data){
     const tree = document.getElementById("tree");
     tree.innerHTML = "";
-    tree.appendChild(create(data));
+
+    const ul = document.createElement("ul");
+    ul.appendChild(createTree(data));
+
+    tree.appendChild(ul);
 }
 
-// 🔄 Firebase-тан оқу
+// 🔄 Firebase оқу (ТЕК КӨРУ)
 onValue(ref(db, "tree"), (snapshot) => {
     const data = snapshot.val();
 
     if(data){
         render(data);
     } else {
-        // Егер база бос болса
         render({ name: "АЛАШ", children: [] });
     }
 });
