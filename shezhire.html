@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 05</title>
+<title>Шежіре 06</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -10,7 +10,7 @@
 body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 #toolbar {position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px;}
 #tree {width:100vw; height:100vh;}
-.node rect {fill-opacity:0.35; stroke-width:2;}
+.node rect {fill-opacity:0.35; stroke-width:2; cursor:pointer;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
@@ -69,7 +69,12 @@ let tempChildren = [];
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
-svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
+
+// --- ZOOM + DRAG ---
+const zoom = d3.zoom()
+  .scaleExtent([0.2, 3])
+  .on("zoom", e => g.attr("transform", e.transform));
+svg.call(zoom);
 
 // --- LOAD DATA ---
 onValue(ref(db, "tree"), snap => {
@@ -92,7 +97,7 @@ function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  // --- dynamic node width ---
+  // Dynamic width
   let maxLen = 0;
   d3.hierarchy(data).descendants().forEach(d => {
     if(d.data.name.length > maxLen) maxLen = d.data.name.length;
@@ -102,11 +107,9 @@ function update(){
   const nodeWidth = Math.max(120, maxLen*charWidth + padding);
   const nodeHeight = 40;
   const radius = nodeHeight/2;
-
   const horizontalGap = nodeWidth + 120;
   const verticalGap = 80;
 
-  // --- hierarchy with collapse ---
   const root = d3.hierarchy(data, d => d.collapsed ? null : d.children);
   d3.tree().nodeSize([verticalGap,horizontalGap])(root);
 
@@ -158,7 +161,7 @@ function update(){
     .text(d=>d.data.name);
 }
 
-// --- CLEAN DATA FOR FIREBASE ---
+// --- CLEAN DATA ---
 function cleanData(node){
   return {
     name: node.name || "",
