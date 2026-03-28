@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре өзгерістер енгізу</title>
+<title>Шежіреге енгізу</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
@@ -68,7 +68,6 @@ body {
 <div id="toolbar">
   <button id="addChildBtn">➕ Бала қосу</button>
   <button id="renameBtn">✏️ Өзгерту</button>
-  <button id="saveBtn">💾 Сақтау</button>
 </div>
 
 <svg id="tree"></svg>
@@ -115,14 +114,13 @@ const db = getDatabase(app);
 
 let data = null;
 let selected = null;
-let root = null;  // Иерархияны сақтау үшін
+let root = null;
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
-
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// Деректерді жүктеу, егер жоқ болса root-ты орнату
+// Firebase-тен жүктеу
 onValue(ref(db, "tree"), snap => {
   if (snap.exists()) {
     data = snap.val();
@@ -136,14 +134,21 @@ onValue(ref(db, "tree"), snap => {
         { name: "Жайлыхан", gender: "male", type: "бала", children: [] }
       ]
     };
-    set(ref(db, "tree"), data);
+    saveToFirebase();
   }
-  // Иерархияны жаңарту және root-ты сақтау
   root = d3.hierarchy(data, d => d.children);
-  selected = root; // root таңдау
+  selected = root;
   update();
 });
 
+// --- Firebase сақтау функциясы ---
+function saveToFirebase() {
+  set(ref(db, "tree"), data)
+    .then(() => console.log("Өзгерістер сақталды"))
+    .catch(err => console.error("Қате:", err));
+}
+
+// --- Деректерді визуалдау ---
 function toggle(d) {
   if (d.children) {
     d._children = d.children;
@@ -158,7 +163,6 @@ function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
-  // Ең ұзын есім
   let maxLen = 0;
   d3.hierarchy(data).descendants().forEach(d => {
     if (d.data.name.length > maxLen) maxLen = d.data.name.length;
@@ -169,27 +173,18 @@ function update() {
   const nodeWidth = Math.max(120, maxLen * charWidth + padding);
   const nodeHeight = 40;
   const radius = nodeHeight / 2;
-
-  // Горизонталь арақашықтық
   const horizontalGap = nodeWidth + 120;
   const verticalGap = 80;
 
-  // Деректерді іерархияға айналдыру
   root = d3.hierarchy(data, d => d.children);
   d3.tree().nodeSize([verticalGap, horizontalGap])(root);
 
-  // Таңдалған түйінді қалпына келтіру
   if (selected) {
     let found = null;
-    root.each(d => {
-      if (d.data === selected.data) found = d;
-    });
+    root.each(d => { if (d.data === selected.data) found = d; });
     selected = found || root;
-  } else {
-    selected = root;
-  }
+  } else selected = root;
 
-  // Линктер сызу
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -198,21 +193,13 @@ function update() {
     .attr("stroke", d => (d.target.data.type === "жиен" ? "gold" : "#999"))
     .attr("stroke-width", d => (d.target.data.type === "жиен" ? 4 : 2))
     .attr("d", d => {
-      const p = d.source;
-      const c = d.target;
-
-      const sx = p.y + nodeWidth / 2;
-      const sy = p.x;
-
-      const ex = c.y - nodeWidth / 2;
-      const ey = c.x;
-
+      const p = d.source, c = d.target;
+      const sx = p.y + nodeWidth / 2, sy = p.x;
+      const ex = c.y - nodeWidth / 2, ey = c.x;
       const mx = (sx + ex) / 2;
-
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
-  // Түйіндер сызу
   const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -246,17 +233,13 @@ function update() {
   });
 }
 
-// --- Мульти бала қосу модалы ---
+// --- Мульти бала қосу ---
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
-
 let tempChildren = [];
 
 document.getElementById("addChildBtn").onclick = () => {
-  if (!selected) {
-    alert("Адам таңдаңыз");
-    return;
-  }
+  if (!selected) { alert("Адам таңдаңыз"); return; }
   modal.style.display = "block";
   tempChildren = [];
   list.innerHTML = "";
@@ -264,12 +247,8 @@ document.getElementById("addChildBtn").onclick = () => {
 };
 
 document.getElementById("addMore").onclick = () => {
-  const nameInput = document.getElementById("childName");
-  const name = nameInput.value.trim();
-  if (!name) {
-    alert("Аты жазылуы тиіс");
-    return;
-  }
+  const name = document.getElementById("childName").value.trim();
+  if (!name) { alert("Аты жазылуы тиіс"); return; }
   const gender = document.getElementById("gender").value;
   const type = document.getElementById("type").value;
 
@@ -280,46 +259,31 @@ document.getElementById("addMore").onclick = () => {
   div.textContent = `${name} (${gender === "male" ? "ер" : "әйел"}, ${type})`;
   list.appendChild(div);
 
-  nameInput.value = "";
-  nameInput.focus();
+  document.getElementById("childName").value = "";
+  document.getElementById("childName").focus();
 };
 
 document.getElementById("confirm").onclick = () => {
-  if (tempChildren.length === 0) {
-    alert("Кем дегенде бір бала қосыңыз");
-    return;
-  }
+  if (tempChildren.length === 0) { alert("Кем дегенде бір бала қосыңыз"); return; }
   tempChildren.forEach(c => {
     if (!selected.data.children) selected.data.children = [];
     selected.data.children.push({ ...c, children: [] });
   });
   modal.style.display = "none";
   update();
+  saveToFirebase(); // ✅ автоматты сақтау
 };
 
-document.getElementById("close").onclick = () => {
-  modal.style.display = "none";
-};
+document.getElementById("close").onclick = () => { modal.style.display = "none"; };
 
 document.getElementById("renameBtn").onclick = () => {
-  if (!selected) {
-    alert("Түйінді таңдаңыз");
-    return;
-  }
+  if (!selected) { alert("Түйінді таңдаңыз"); return; }
   const newName = prompt("Жаңа аты:", selected.data.name);
   if (newName && newName.trim()) {
     selected.data.name = newName.trim();
     update();
+    saveToFirebase(); // ✅ автоматты сақтау
   }
-};
-
-document.getElementById("saveBtn").onclick = () => {
-  if (!data) {
-    alert("Сақтауға ештеңе жоқ");
-    return;
-  }
-  set(ref(db, "tree"), data);
-  alert("Сақталды");
 };
 
 function clearInputs() {
