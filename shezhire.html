@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіреге 2 енгізу</title>
+<title>Шежіреге 1 енгізу</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
@@ -29,7 +29,7 @@ body {
 }
 
 .node rect {
-  fill-opacity: 0.9;
+  fill-opacity: 0.35;
   stroke-width: 2;
 }
 .node text {
@@ -68,6 +68,7 @@ body {
 <div id="toolbar">
   <button id="addChildBtn">➕ Бала қосу</button>
   <button id="renameBtn">✏️ Өзгерту</button>
+  <button id="saveBtn">💾 Сақтау</button>
 </div>
 
 <svg id="tree"></svg>
@@ -101,7 +102,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
-  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app",
+  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
   projectId: "shezhire-site",
   storageBucket: "shezhire-site.firebasestorage.app",
   messagingSenderId: "714823841418",
@@ -114,13 +115,14 @@ const db = getDatabase(app);
 
 let data = null;
 let selected = null;
-let root = null;
+let root = null;  // Иерархияны сақтау үшін
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
+
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// Firebase-тен жүктеу
+// Деректерді жүктеу, егер жоқ болса root-ты орнату
 onValue(ref(db, "tree"), snap => {
   if (snap.exists()) {
     data = snap.val();
@@ -134,59 +136,60 @@ onValue(ref(db, "tree"), snap => {
         { name: "Жайлыхан", gender: "male", type: "бала", children: [] }
       ]
     };
-    saveToFirebase();
+    set(ref(db, "tree"), data);
   }
-  selected = data;
+  // Иерархияны жаңарту және root-ты сақтау
+  root = d3.hierarchy(data, d => d.children);
+  selected = root; // root таңдау
   update();
 });
 
-// --- Firebase сақтау функциясы ---
-async function saveToFirebase() {
-  try {
-    await set(ref(db, "tree"), data);
-    console.log("Өзгерістер Firebase-ке сақталды");
-  } catch (error) {
-    console.error("Firebase-ке жазуда қате:", error);
-  }
-}
-
-// --- children/_children ауыстыру ---
 function toggle(d) {
-  if (d.children && d.children.length > 0) {
+  if (d.children) {
     d._children = d.children;
     d.children = null;
-  } else if (d._children && d._children.length > 0) {
+  } else if (d._children) {
     d.children = d._children;
     d._children = null;
   }
 }
 
-// --- Деректерді визуалдау ---
 function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
-  // Node өлшемдері
+  // Ең ұзын есім
   let maxLen = 0;
-  function computeMaxLen(d) {
-    if(d.name.length > maxLen) maxLen = d.name.length;
-    if(d.children) d.children.forEach(computeMaxLen);
-    if(d._children) d._children.forEach(computeMaxLen);
-  }
-  computeMaxLen(data);
+  d3.hierarchy(data).descendants().forEach(d => {
+    if (d.data.name.length > maxLen) maxLen = d.data.name.length;
+  });
 
   const charWidth = 9;
   const padding = 40;
   const nodeWidth = Math.max(120, maxLen * charWidth + padding);
   const nodeHeight = 40;
   const radius = nodeHeight / 2;
+
+  // Горизонталь арақашықтық
   const horizontalGap = nodeWidth + 120;
   const verticalGap = 80;
 
-  // Hierarchy жасау
+  // Деректерді іерархияға айналдыру
   root = d3.hierarchy(data, d => d.children);
   d3.tree().nodeSize([verticalGap, horizontalGap])(root);
 
+  // Таңдалған түйінді қалпына келтіру
+  if (selected) {
+    let found = null;
+    root.each(d => {
+      if (d.data === selected.data) found = d;
+    });
+    selected = found || root;
+  } else {
+    selected = root;
+  }
+
+  // Линктер сызу
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -195,13 +198,21 @@ function update() {
     .attr("stroke", d => (d.target.data.type === "жиен" ? "gold" : "#999"))
     .attr("stroke-width", d => (d.target.data.type === "жиен" ? 4 : 2))
     .attr("d", d => {
-      const p = d.source, c = d.target;
-      const sx = p.y + nodeWidth / 2, sy = p.x;
-      const ex = c.y - nodeWidth / 2, ey = c.x;
+      const p = d.source;
+      const c = d.target;
+
+      const sx = p.y + nodeWidth / 2;
+      const sy = p.x;
+
+      const ex = c.y - nodeWidth / 2;
+      const ey = c.x;
+
       const mx = (sx + ex) / 2;
+
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
+  // Түйіндер сызу
   const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -209,8 +220,8 @@ function update() {
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`)
     .on("click", (event, d) => {
-      selected = d.data;
-      toggle(d.data); // _children ауыстыру
+      selected = d;
+      toggle(d.data);
       update();
     });
 
@@ -235,13 +246,17 @@ function update() {
   });
 }
 
-// --- Мульти бала қосу ---
+// --- Мульти бала қосу модалы ---
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
+
 let tempChildren = [];
 
 document.getElementById("addChildBtn").onclick = () => {
-  if (!selected) { alert("Адам таңдаңыз"); return; }
+  if (!selected) {
+    alert("Адам таңдаңыз");
+    return;
+  }
   modal.style.display = "block";
   tempChildren = [];
   list.innerHTML = "";
@@ -249,8 +264,12 @@ document.getElementById("addChildBtn").onclick = () => {
 };
 
 document.getElementById("addMore").onclick = () => {
-  const name = document.getElementById("childName").value.trim();
-  if (!name) { alert("Аты жазылуы тиіс"); return; }
+  const nameInput = document.getElementById("childName");
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert("Аты жазылуы тиіс");
+    return;
+  }
   const gender = document.getElementById("gender").value;
   const type = document.getElementById("type").value;
 
@@ -261,29 +280,46 @@ document.getElementById("addMore").onclick = () => {
   div.textContent = `${name} (${gender === "male" ? "ер" : "әйел"}, ${type})`;
   list.appendChild(div);
 
-  document.getElementById("childName").value = "";
-  document.getElementById("childName").focus();
+  nameInput.value = "";
+  nameInput.focus();
 };
 
-document.getElementById("confirm").onclick = async () => {
-  if (tempChildren.length === 0) { alert("Кем дегенде бір бала қосыңыз"); return; }
-  if (!selected.children) selected.children = [];
-  tempChildren.forEach(c => selected.children.push({ ...c, children: [] }));
+document.getElementById("confirm").onclick = () => {
+  if (tempChildren.length === 0) {
+    alert("Кем дегенде бір бала қосыңыз");
+    return;
+  }
+  tempChildren.forEach(c => {
+    if (!selected.data.children) selected.data.children = [];
+    selected.data.children.push({ ...c, children: [] });
+  });
   modal.style.display = "none";
   update();
-  await saveToFirebase();
 };
 
-document.getElementById("close").onclick = () => { modal.style.display = "none"; };
+document.getElementById("close").onclick = () => {
+  modal.style.display = "none";
+};
 
 document.getElementById("renameBtn").onclick = () => {
-  if (!selected) { alert("Түйінді таңдаңыз"); return; }
-  const newName = prompt("Жаңа аты:", selected.name);
-  if (newName && newName.trim()) {
-    selected.name = newName.trim();
-    update();
-    saveToFirebase();
+  if (!selected) {
+    alert("Түйінді таңдаңыз");
+    return;
   }
+  const newName = prompt("Жаңа аты:", selected.data.name);
+  if (newName && newName.trim()) {
+    selected.data.name = newName.trim();
+    update();
+  }
+};
+
+document.getElementById("saveBtn").onclick = () => {
+  if (!data) {
+    alert("Сақтауға ештеңе жоқ");
+    return;
+  }
+  set(ref(db, "tree"), data);
+  alert("Сақталды");
 };
 
 function clearInputs() {
