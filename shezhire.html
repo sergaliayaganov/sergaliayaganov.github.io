@@ -2,19 +2,20 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіреге қосу</title>
+<title>Шежіре FINAL PRO</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
-#toolbar { position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px; }
+#toolbar { position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px; align-items:center; }
 #tree { width:100vw; height:100vh; }
 .node rect { fill-opacity:0.35; stroke-width:2; }
 .node text { font-size:14px; font-weight:bold; pointer-events:none; }
 .link { fill:none; stroke:#999; stroke-width:2; }
 #modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.3); display:none; width:300px; }
 .childItem { background:#eee; margin:5px 0; padding:5px 10px; border-radius:5px; }
+#saveMessage { color:green; font-weight:bold; display:none; margin-left:10px; }
 </style>
 </head>
 <body>
@@ -22,6 +23,7 @@ body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
   <button id="addChildBtn">➕ Бала қосу</button>
   <button id="renameBtn">✏️ Өзгерту</button>
   <button id="saveBtn">💾 Сақтау</button>
+  <span id="saveMessage">Сақталды ✅</span>
 </div>
 
 <svg id="tree"></svg>
@@ -73,9 +75,8 @@ svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
 // --- Деректерді жүктеу ---
 onValue(ref(db,"tree"), snap => {
-  if(snap.exists()){
-    data = snap.val();
-  } else {
+  if(snap.exists()){ data = snap.val(); } 
+  else{
     data = {
       name:"АЛАШ",
       gender:"male",
@@ -211,12 +212,16 @@ document.getElementById("renameBtn").onclick=()=>{
   }
 };
 
-// --- Сақтау Firebase-де (push) ---
-document.getElementById("saveBtn").onclick=()=>{
+// --- Сақтау Firebase-де (push) + хабар ---
+document.getElementById("saveBtn").onclick = () => {
   const treesRef = ref(db,"trees"); // жаңа коллекция
   push(treesRef, data)
-    .then(()=>alert("Ағаш Firebase-де сақталды!"))
-    .catch(err=>alert("Қате: "+err));
+    .then(() => {
+      const msg = document.getElementById("saveMessage");
+      msg.style.display = "inline";             // хабар көрсету
+      setTimeout(() => { msg.style.display = "none"; }, 3000); // 3 секундтан кейін жоғалу
+    })
+    .catch(err => alert("Қате: " + err));
 };
 
 function clearInputs(){
