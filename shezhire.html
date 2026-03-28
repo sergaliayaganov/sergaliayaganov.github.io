@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре FINAL PRO</title>
+<title>Шежіреге өзгерістер енгізу</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -48,7 +48,7 @@ body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // Firebase конфиг
 const firebaseConfig = {
@@ -86,6 +86,7 @@ onValue(ref(db,"tree"), snap => {
         { name:"Жайлыхан", gender:"male", type:"бала", children:[] }
       ]
     };
+    set(ref(db,"tree"), data); // бастапқы ағашты сақтау
   }
   root = d3.hierarchy(data, d=>d.children);
   selected = root;
@@ -212,14 +213,13 @@ document.getElementById("renameBtn").onclick=()=>{
   }
 };
 
-// --- Сақтау Firebase-де (push) + хабар ---
+// --- Сақтау Firebase-де (set) + хабар ---
 document.getElementById("saveBtn").onclick = () => {
-  const treesRef = ref(db,"trees"); // жаңа коллекция
-  push(treesRef, data)
+  set(ref(db,"tree"), data)
     .then(() => {
       const msg = document.getElementById("saveMessage");
-      msg.style.display = "inline";             // хабар көрсету
-      setTimeout(() => { msg.style.display = "none"; }, 3000); // 3 секундтан кейін жоғалу
+      msg.style.display = "inline";
+      setTimeout(() => { msg.style.display = "none"; }, 3000);
     })
     .catch(err => alert("Қате: " + err));
 };
