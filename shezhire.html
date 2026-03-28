@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіреге 1 енгізу</title>
+<title>Шежіреге 2 енгізу</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
@@ -29,7 +29,7 @@ body {
 }
 
 .node rect {
-  fill-opacity: 0.9; /* мәтін көрінуі үшін арттырдық */
+  fill-opacity: 0.9;
   stroke-width: 2;
 }
 .node text {
@@ -136,8 +136,7 @@ onValue(ref(db, "tree"), snap => {
     };
     saveToFirebase();
   }
-  root = d3.hierarchy(data, d => d.children);
-  selected = root;
+  selected = data;
   update();
 });
 
@@ -151,25 +150,30 @@ async function saveToFirebase() {
   }
 }
 
-// --- Деректерді визуалдау ---
+// --- children/_children ауыстыру ---
 function toggle(d) {
-  if (d.children) {
+  if (d.children && d.children.length > 0) {
     d._children = d.children;
     d.children = null;
-  } else if (d._children) {
+  } else if (d._children && d._children.length > 0) {
     d.children = d._children;
     d._children = null;
   }
 }
 
+// --- Деректерді визуалдау ---
 function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
+  // Node өлшемдері
   let maxLen = 0;
-  d3.hierarchy(data).descendants().forEach(d => {
-    if (d.data.name.length > maxLen) maxLen = d.data.name.length;
-  });
+  function computeMaxLen(d) {
+    if(d.name.length > maxLen) maxLen = d.name.length;
+    if(d.children) d.children.forEach(computeMaxLen);
+    if(d._children) d._children.forEach(computeMaxLen);
+  }
+  computeMaxLen(data);
 
   const charWidth = 9;
   const padding = 40;
@@ -179,14 +183,9 @@ function update() {
   const horizontalGap = nodeWidth + 120;
   const verticalGap = 80;
 
+  // Hierarchy жасау
   root = d3.hierarchy(data, d => d.children);
   d3.tree().nodeSize([verticalGap, horizontalGap])(root);
-
-  if (selected) {
-    let found = null;
-    root.each(d => { if (d.data === selected.data) found = d; });
-    selected = found || root;
-  } else selected = root;
 
   g.selectAll(".link")
     .data(root.links())
@@ -210,8 +209,8 @@ function update() {
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`)
     .on("click", (event, d) => {
-      selected = d;
-      toggle(d); // ✅ d.data емес, d
+      selected = d.data;
+      toggle(d.data); // _children ауыстыру
       update();
     });
 
@@ -266,26 +265,24 @@ document.getElementById("addMore").onclick = () => {
   document.getElementById("childName").focus();
 };
 
-document.getElementById("confirm").onclick = async () => { // ✅ async қосылды
+document.getElementById("confirm").onclick = async () => {
   if (tempChildren.length === 0) { alert("Кем дегенде бір бала қосыңыз"); return; }
-  tempChildren.forEach(c => {
-    if (!selected.data.children) selected.data.children = [];
-    selected.data.children.push({ ...c, children: [] });
-  });
+  if (!selected.children) selected.children = [];
+  tempChildren.forEach(c => selected.children.push({ ...c, children: [] }));
   modal.style.display = "none";
   update();
-  await saveToFirebase(); // ✅ автоматты сақтау
+  await saveToFirebase();
 };
 
 document.getElementById("close").onclick = () => { modal.style.display = "none"; };
 
 document.getElementById("renameBtn").onclick = () => {
   if (!selected) { alert("Түйінді таңдаңыз"); return; }
-  const newName = prompt("Жаңа аты:", selected.data.name);
+  const newName = prompt("Жаңа аты:", selected.name);
   if (newName && newName.trim()) {
-    selected.data.name = newName.trim();
+    selected.name = newName.trim();
     update();
-    saveToFirebase().then(() => console.log("Сақталды")).catch(console.error); // ✅ автоматты сақтау
+    saveToFirebase();
   }
 };
 
