@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 3</title>
+<title>Шежіре 01</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -87,7 +87,7 @@ onValue(ref(db, "tree"), snap => {
   update();
 });
 
-// collapse
+// ✅ toggle тек D3 node-қа
 function toggle(d){
   if(d.children){
     d._children = d.children;
@@ -102,10 +102,17 @@ function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  const nodeWidth = 140;
+  // ✅ DYNAMIC WIDTH
+  let maxLen = 0;
+  d3.hierarchy(data).descendants().forEach(d=>{
+    if(d.data.name.length > maxLen) maxLen = d.data.name.length;
+  });
 
-  const root = d3.hierarchy(data);
-  d3.tree().nodeSize([80,220])(root);
+  const charWidth = 9;
+  const nodeWidth = Math.max(140, maxLen * charWidth + 40);
+
+  const root = d3.hierarchy(data, d => d.children);
+  d3.tree().nodeSize([80, nodeWidth + 100])(root);
 
   // links
   g.selectAll(".link")
@@ -132,15 +139,17 @@ function update(){
     .attr("transform", d=>`translate(${d.y},${d.x})`)
     .on("click",(e,d)=>{
       selected=d;
-      toggle(d.data);
+      toggle(d); // 🔥 FIX
       update();
     });
 
   node.classed("selected", d=>d===selected);
 
   node.append("rect")
-    .attr("x",-70).attr("y",-20)
-    .attr("width",140).attr("height",40)
+    .attr("x",-nodeWidth/2)
+    .attr("y",-20)
+    .attr("width",nodeWidth)
+    .attr("height",40)
     .attr("rx",20)
     .attr("fill", d=>d.data.gender==="female"?"#f7a6c6":"#8bb7ff");
 
@@ -150,13 +159,15 @@ function update(){
     .text(d=>d.data.name);
 }
 
-// CLEAN
+// ✅ CLEAN (cycle толық жояды)
 function cleanData(node){
   return {
     name: node.name || "",
     gender: node.gender || "male",
     type: node.type || "бала",
-    children: node.children ? node.children.map(cleanData) : []
+    children: Array.isArray(node.children)
+      ? node.children.map(cleanData)
+      : []
   };
 }
 
