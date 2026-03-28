@@ -102,10 +102,11 @@ onValue(ref(db,"tree"),snap=>{
   update();
 });
 
-// --- Түйінді ашып/жабу (визуалды) ---
+// --- Түйінді ашып/жабу (визуалды + автоматты сақтау) ---
 function toggle(d){
   if(d.children){ d._children=d.children; d.children=null; }
   else if(d._children){ d.children=d._children; d._children=null; }
+  saveToFirebase(); // ← визуалды toggle-ды да Firebase-та сақтаймыз
 }
 
 // --- Ағашты жаңарту ---
@@ -204,7 +205,7 @@ document.getElementById("addMore").onclick=()=>{
   nameInput.focus();
 };
 
-// ✅ Негізгі өзгерістерді дереу Firebase-қа сақтау
+// ✅ Бала қосу + Firebase-та автоматты сақтау
 document.getElementById("confirm").onclick=()=>{
   if(tempChildren.length===0){ alert("Кем дегенде бір бала қосыңыз"); return; }
   if(!selected.data.children) selected.data.children=[];
@@ -212,7 +213,7 @@ document.getElementById("confirm").onclick=()=>{
   tempChildren=[];
   modal.style.display="none";
   update();
-  saveToFirebase(); // ← автоматты сақтау
+  saveToFirebase();
 };
 
 document.getElementById("close").onclick=()=>{ modal.style.display="none"; };
