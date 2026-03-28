@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 2</title>
+<title>Шежіре 3</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -14,8 +14,14 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
-#modal {position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-background:white; padding:20px; border-radius:10px; display:none;}
+
+#modal {
+ position:fixed; top:50%; left:50%;
+ transform:translate(-50%,-50%);
+ background:white; padding:20px;
+ border-radius:10px; display:none;
+}
+.childItem {background:#eee; margin:5px; padding:5px;}
 </style>
 </head>
 
@@ -35,15 +41,20 @@ background:white; padding:20px; border-radius:10px; display:none;}
     <option value="male">ер</option>
     <option value="female">әйел</option>
   </select>
+  <select id="type">
+    <option value="бала">бала</option>
+    <option value="жиен">жиен</option>
+  </select>
   <br><br>
   <button id="addMore">+ Қосу</button>
+  <button id="confirm">Дайын</button>
+  <div id="list"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔥 СЕНІҢ CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -51,8 +62,7 @@ const firebaseConfig = {
   projectId: "shezhire-site",
   storageBucket: "shezhire-site.firebasestorage.app",
   messagingSenderId: "714823841418",
-  appId: "1:714823841418:web:99333d2aba6d57857b1f73",
-  measurementId: "G-8V6NR3MHYC"
+  appId: "1:714823841418:web:99333d2aba6d57857b1f73"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -60,6 +70,7 @@ const db = getDatabase(app);
 
 let data = null;
 let selected = null;
+let tempChildren = [];
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
@@ -67,39 +78,49 @@ const g = svg.append("g");
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
 onValue(ref(db, "tree"), snap => {
-  if (snap.exists()) {
-    data = snap.val();
-  } else {
-    data = { name:"АЛАШ", gender:"male", children:[] };
-    set(ref(db, "tree"), data);
-  }
+  data = snap.exists() ? snap.val() : {
+    name:"АЛАШ",
+    gender:"male",
+    type:"бала",
+    children:[]
+  };
   update();
 });
 
-function update() {
-  g.selectAll("*").remove();
-  if (!data) return;
+// collapse
+function toggle(d){
+  if(d.children){
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+}
 
-  const nodeWidth = 120;
+function update(){
+  g.selectAll("*").remove();
+  if(!data) return;
+
+  const nodeWidth = 140;
 
   const root = d3.hierarchy(data);
-  d3.tree().nodeSize([80,200])(root);
+  d3.tree().nodeSize([80,220])(root);
 
-  // ✅ СЫЗЫҚ FIX
+  // links
   g.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
     .attr("class","link")
-    .attr("d", d => {
-      const sx = d.source.y + nodeWidth/2;
-      const sy = d.source.x;
-
-      const ex = d.target.y - nodeWidth/2;
-      const ey = d.target.x;
-
-      const mx = (sx + ex) / 2;
-
+    .attr("stroke", d=>d.target.data.type==="жиен"?"gold":"#999")
+    .attr("stroke-width", d=>d.target.data.type==="жиен"?4:2)
+    .attr("d", d=>{
+      const sx=d.source.y+nodeWidth/2;
+      const sy=d.source.x;
+      const ex=d.target.y-nodeWidth/2;
+      const ey=d.target.x;
+      const mx=(sx+ex)/2;
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
@@ -110,16 +131,16 @@ function update() {
     .attr("class","node")
     .attr("transform", d=>`translate(${d.y},${d.x})`)
     .on("click",(e,d)=>{
-      selected = d;
+      selected=d;
+      toggle(d.data);
       update();
     });
 
-  // highlight
-  node.classed("selected", d => d === selected);
+  node.classed("selected", d=>d===selected);
 
   node.append("rect")
-    .attr("x",-60).attr("y",-20)
-    .attr("width",120).attr("height",40)
+    .attr("x",-70).attr("y",-20)
+    .attr("width",140).attr("height",40)
     .attr("rx",20)
     .attr("fill", d=>d.data.gender==="female"?"#f7a6c6":"#8bb7ff");
 
@@ -129,48 +150,68 @@ function update() {
     .text(d=>d.data.name);
 }
 
-// 🔥 CLEAN (Firebase fix)
+// CLEAN
 function cleanData(node){
   return {
-    name: node.name,
-    gender: node.gender,
+    name: node.name || "",
+    gender: node.gender || "male",
+    type: node.type || "бала",
     children: node.children ? node.children.map(cleanData) : []
   };
 }
 
-// ➕ Бала қосу
-document.getElementById("addChildBtn").onclick = () => {
-  if (!selected) return alert("Адам таңдаңыз");
+// --- MODAL ---
+const modal = document.getElementById("modal");
+const list = document.getElementById("list");
 
-  const name = prompt("Бала аты:");
-  if (!name) return;
+document.getElementById("addChildBtn").onclick = ()=>{
+  if(!selected) return alert("Адам таңдаңыз");
+  modal.style.display="block";
+  tempChildren=[];
+  list.innerHTML="";
+};
 
-  if (!selected.data.children) selected.data.children = [];
+document.getElementById("addMore").onclick = ()=>{
+  const name = childName.value.trim();
+  if(!name) return alert("Аты керек");
 
-  selected.data.children.push({
-    name,
-    gender:"male",
-    children:[]
+  const gender = document.getElementById("gender").value;
+  const type = document.getElementById("type").value;
+
+  tempChildren.push({name, gender, type});
+
+  const div=document.createElement("div");
+  div.className="childItem";
+  div.textContent=`${name} (${gender}, ${type})`;
+  list.appendChild(div);
+
+  childName.value="";
+};
+
+document.getElementById("confirm").onclick = ()=>{
+  if(tempChildren.length===0) return;
+
+  tempChildren.forEach(c=>{
+    if(!selected.data.children) selected.data.children=[];
+    selected.data.children.push({...c, children:[]});
   });
 
+  modal.style.display="none";
   update();
 };
 
-// ✏️ Өзгерту
-document.getElementById("renameBtn").onclick = () => {
-  if (!selected) return alert("Таңда");
-
-  const name = prompt("Жаңа аты:", selected.data.name);
-  if (name) {
-    selected.data.name = name;
-    update();
-  }
+// rename
+document.getElementById("renameBtn").onclick = ()=>{
+  if(!selected) return alert("Таңда");
+  const name=prompt("Жаңа аты:", selected.data.name);
+  if(name) selected.data.name=name;
+  update();
 };
 
-// 💾 САҚТАУ
-document.getElementById("saveBtn").onclick = async () => {
+// SAVE
+document.getElementById("saveBtn").onclick = async ()=>{
   try{
-    const clean = cleanData(data);
+    const clean=cleanData(data);
     await set(ref(db,"tree"), clean);
     alert("Сақталды");
   }catch(e){
