@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіреге енгізу</title>
+<title>Шежіреге 1 енгізу</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
@@ -29,7 +29,7 @@ body {
 }
 
 .node rect {
-  fill-opacity: 0.35;
+  fill-opacity: 0.9; /* мәтін көрінуі үшін арттырдық */
   stroke-width: 2;
 }
 .node text {
@@ -211,7 +211,7 @@ function update() {
     .attr("transform", d => `translate(${d.y},${d.x})`)
     .on("click", (event, d) => {
       selected = d;
-      toggle(d.data);
+      toggle(d); // ✅ d.data емес, d
       update();
     });
 
@@ -266,7 +266,7 @@ document.getElementById("addMore").onclick = () => {
   document.getElementById("childName").focus();
 };
 
-document.getElementById("confirm").onclick = () => {
+document.getElementById("confirm").onclick = async () => { // ✅ async қосылды
   if (tempChildren.length === 0) { alert("Кем дегенде бір бала қосыңыз"); return; }
   tempChildren.forEach(c => {
     if (!selected.data.children) selected.data.children = [];
