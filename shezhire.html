@@ -121,7 +121,7 @@ const svg = d3.select("#tree");
 const g = svg.append("g");
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// --- Автоматты сақтау функциясы ---
+// --- Автоматты сақтау ---
 function saveToFirebase() {
   if (!data) return;
   set(ref(db, "tree"), data)
@@ -129,7 +129,21 @@ function saveToFirebase() {
     .catch(err => console.error("Қате:", err));
 }
 
-// Деректерді жүктеу
+// --- Деректерді hierarchy арқылы data-ға қайта жазу ---
+function updateDataFromRoot(d3Node) {
+  function copyNode(node) {
+    const children = (node.children || []).map(copyNode);
+    return {
+      name: node.data.name,
+      gender: node.data.gender,
+      type: node.data.type,
+      children: children
+    };
+  }
+  data = copyNode(d3Node);
+}
+
+// --- Деректерді жүктеу ---
 onValue(ref(db, "tree"), snap => {
   if (snap.exists()) {
     data = snap.val();
@@ -150,6 +164,7 @@ onValue(ref(db, "tree"), snap => {
   update();
 });
 
+// --- Түйінді ашу/жабу ---
 function toggle(d) {
   if (d.children) {
     d._children = d.children;
@@ -158,14 +173,15 @@ function toggle(d) {
     d.children = d._children;
     d._children = null;
   }
-  saveToFirebase(); // ✅ Түйінді ашып/жабғанда автоматты сақтау
+  updateDataFromRoot(root); // ✅ data жаңартылады
+  saveToFirebase();         // ✅ автоматты сақтау
 }
 
+// --- Деректерді көрсету ---
 function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
-  // Ұзын есімдерге бейімделген овал ені
   let maxLen = 0;
   d3.hierarchy(data).descendants().forEach(d => {
     if (d.data.name.length > maxLen) maxLen = d.data.name.length;
@@ -185,13 +201,9 @@ function update() {
 
   if (selected) {
     let found = null;
-    root.each(d => {
-      if (d.data === selected.data) found = d;
-    });
+    root.each(d => { if (d.data === selected.data) found = d; });
     selected = found || root;
-  } else {
-    selected = root;
-  }
+  } else selected = root;
 
   // --- Link ---
   g.selectAll(".link")
@@ -219,10 +231,7 @@ function update() {
     .append("g")
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`)
-    .on("click", (event, d) => {
-      selected = d;
-      toggle(d.data);
-    });
+    .on("click", (event, d) => { selected = d; toggle(d); });
 
   nodes.each(function(d) {
     const group = d3.select(this);
@@ -248,14 +257,10 @@ function update() {
 // --- Мульти бала қосу модалы ---
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
-
 let tempChildren = [];
 
 document.getElementById("addChildBtn").onclick = () => {
-  if (!selected) {
-    alert("Адам таңдаңыз");
-    return;
-  }
+  if (!selected) { alert("Адам таңдаңыз"); return; }
   modal.style.display = "block";
   tempChildren = [];
   list.innerHTML = "";
@@ -263,61 +268,47 @@ document.getElementById("addChildBtn").onclick = () => {
 };
 
 document.getElementById("addMore").onclick = () => {
-  const nameInput = document.getElementById("childName");
-  const name = nameInput.value.trim();
-  if (!name) {
-    alert("Аты жазылуы тиіс");
-    return;
-  }
+  const name = document.getElementById("childName").value.trim();
+  if (!name) { alert("Аты жазылуы тиіс"); return; }
   const gender = document.getElementById("gender").value;
   const type = document.getElementById("type").value;
-
   tempChildren.push({ name, gender, type });
 
   const div = document.createElement("div");
   div.className = "childItem";
-  div.textContent = `${name} (${gender === "male" ? "ер" : "әйел"}, ${type})`;
+  div.textContent = `${name} (${gender==="male"?"ер":"әйел"}, ${type})`;
   list.appendChild(div);
 
-  nameInput.value = "";
-  nameInput.focus();
+  document.getElementById("childName").value = "";
+  document.getElementById("childName").focus();
 };
 
 document.getElementById("confirm").onclick = () => {
-  if (tempChildren.length === 0) {
-    alert("Кем дегенде бір бала қосыңыз");
-    return;
-  }
+  if (tempChildren.length === 0) { alert("Кем дегенде бір бала қосыңыз"); return; }
   tempChildren.forEach(c => {
     if (!selected.data.children) selected.data.children = [];
     selected.data.children.push({ ...c, children: [] });
   });
   modal.style.display = "none";
   update();
-  saveToFirebase();  // ✅ Автоматты сақтау
+  updateDataFromRoot(root);
+  saveToFirebase(); // ✅ автоматты сақтау
 };
 
-document.getElementById("close").onclick = () => {
-  modal.style.display = "none";
-};
+document.getElementById("close").onclick = () => { modal.style.display = "none"; };
 
 document.getElementById("renameBtn").onclick = () => {
-  if (!selected) {
-    alert("Түйінді таңдаңыз");
-    return;
-  }
+  if (!selected) { alert("Түйінді таңдаңыз"); return; }
   const newName = prompt("Жаңа аты:", selected.data.name);
   if (newName && newName.trim()) {
     selected.data.name = newName.trim();
     update();
-    saveToFirebase(); // ✅ Автоматты сақтау
+    updateDataFromRoot(root);
+    saveToFirebase(); // ✅ автоматты сақтау
   }
 };
 
-document.getElementById("saveBtn").onclick = () => {
-  saveToFirebase();
-  alert("Сақталды");
-};
+document.getElementById("saveBtn").onclick = () => { saveToFirebase(); alert("Сақталды"); };
 
 function clearInputs() {
   document.getElementById("childName").value = "";
