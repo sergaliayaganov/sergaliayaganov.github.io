@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 06</title>
+<title>Шежіре 03</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -10,13 +10,19 @@
 body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 #toolbar {position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px;}
 #tree {width:100vw; height:100vh;}
-.node rect {fill-opacity:0.35; stroke-width:2; cursor:pointer;}
+.node rect {fill-opacity:0.35; stroke-width:2;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
-#modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
- background:white; padding:20px; border-radius:10px; display:none;}
-.childItem {background:#eee; margin:5px; padding:5px;}
+
+#modal {
+ position:fixed; top:50%; left:50%;
+ transform:translate(-50%,-50%);
+ background:white; padding:20px;
+ border-radius:10px; display:none;
+ width:300px;
+}
+.childItem {background:#eee; margin:5px; padding:5px; border-radius:5px;}
 </style>
 </head>
 
@@ -31,6 +37,7 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 <svg id="tree"></svg>
 
 <div id="modal">
+  <h3>Бірнеше бала қосу</h3>
   <input id="childName" placeholder="Аты" />
   <select id="gender">
     <option value="male">ер</option>
@@ -43,6 +50,7 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
   <br><br>
   <button id="addMore">+ Қосу</button>
   <button id="confirm">Дайын</button>
+  <button id="close">Жабу</button>
   <div id="list"></div>
 </div>
 
@@ -50,6 +58,7 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// Firebase конфиг
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -70,50 +79,47 @@ let tempChildren = [];
 const svg = d3.select("#tree");
 const g = svg.append("g");
 
-// --- ZOOM + DRAG ---
-const zoom = d3.zoom()
-  .scaleExtent([0.2, 3])
-  .on("zoom", e => g.attr("transform", e.transform));
-svg.call(zoom);
+svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// --- LOAD DATA ---
+// Firebase-тен оқу
 onValue(ref(db, "tree"), snap => {
-  data = snap.exists() ? snap.val() : {
-    name:"АЛАШ",
-    gender:"male",
-    type:"бала",
-    children:[]
-  };
+  data = snap.exists() ? snap.val() : { name:"АЛАШ", gender:"male", type:"бала", children:[] };
   update();
 });
 
-// --- COLLAPSE TOGGLE ---
+// collapse
 function toggle(d){
-  d.data.collapsed = !d.data.collapsed;
+  if(d.children){
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
 }
 
-// --- UPDATE TREE ---
 function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  // Dynamic width
+  // динамикалық nodeWidth есімге қарай
   let maxLen = 0;
-  d3.hierarchy(data).descendants().forEach(d => {
+  d3.hierarchy(data).descendants().forEach(d=>{
     if(d.data.name.length > maxLen) maxLen = d.data.name.length;
   });
   const charWidth = 9;
   const padding = 40;
-  const nodeWidth = Math.max(120, maxLen*charWidth + padding);
+  const nodeWidth = Math.max(120, maxLen * charWidth + padding);
   const nodeHeight = 40;
   const radius = nodeHeight/2;
+
   const horizontalGap = nodeWidth + 120;
   const verticalGap = 80;
 
-  const root = d3.hierarchy(data, d => d.collapsed ? null : d.children);
-  d3.tree().nodeSize([verticalGap,horizontalGap])(root);
+  const root = d3.hierarchy(data, d => d.children);
+  d3.tree().nodeSize([verticalGap, horizontalGap])(root);
 
-  // --- links ---
+  // links
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -130,8 +136,7 @@ function update(){
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
-  // --- nodes ---
-  const node = g.selectAll(".node")
+  const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
     .append("g")
@@ -139,29 +144,30 @@ function update(){
     .attr("transform", d=>`translate(${d.y},${d.x})`)
     .on("click",(e,d)=>{
       selected=d;
-      toggle(d);
+      toggle(d.data);
       update();
     });
 
-  node.classed("selected", d=>d===selected);
+  nodes.classed("selected", d=>d===selected);
 
-  node.append("rect")
+  nodes.append("rect")
     .attr("x",-nodeWidth/2)
     .attr("y",-nodeHeight/2)
     .attr("width",nodeWidth)
     .attr("height",nodeHeight)
     .attr("rx",radius)
+    .attr("ry",radius)
     .attr("fill", d=>d.data.gender==="female"?"#f7a6c6":"#8bb7ff")
     .attr("stroke", d=>d.data.type==="жиен"?"gold":(d.data.gender==="female"?"#d95380":"#3b70d6"))
     .attr("stroke-width", d=>d.data.type==="жиен"?4:2);
 
-  node.append("text")
+  nodes.append("text")
     .attr("text-anchor","middle")
     .attr("dy",5)
     .text(d=>d.data.name);
 }
 
-// --- CLEAN DATA ---
+// Firebase-қа жазар алдында тек қажетті деректерді ғана сақтау
 function cleanData(node){
   return {
     name: node.name || "",
@@ -183,35 +189,33 @@ document.getElementById("addChildBtn").onclick = ()=>{
 };
 
 document.getElementById("addMore").onclick = ()=>{
-  const name = childName.value.trim();
+  const name = document.getElementById("childName").value.trim();
   if(!name) return alert("Аты керек");
-
   const gender = document.getElementById("gender").value;
   const type = document.getElementById("type").value;
-
   tempChildren.push({name, gender, type});
 
-  const div=document.createElement("div");
+  const div = document.createElement("div");
   div.className="childItem";
   div.textContent=`${name} (${gender}, ${type})`;
   list.appendChild(div);
 
-  childName.value="";
+  document.getElementById("childName").value="";
 };
 
 document.getElementById("confirm").onclick = ()=>{
   if(tempChildren.length===0) return;
-
   tempChildren.forEach(c=>{
     if(!selected.data.children) selected.data.children=[];
     selected.data.children.push({...c, children:[]});
   });
-
   modal.style.display="none";
   update();
 };
 
-// --- rename ---
+document.getElementById("close").onclick = ()=>{ modal.style.display="none"; };
+
+// rename
 document.getElementById("renameBtn").onclick = ()=>{
   if(!selected) return alert("Таңда");
   const name=prompt("Жаңа аты:", selected.data.name);
@@ -219,10 +223,10 @@ document.getElementById("renameBtn").onclick = ()=>{
   update();
 };
 
-// --- SAVE ---
+// save
 document.getElementById("saveBtn").onclick = async ()=>{
   try{
-    const clean=cleanData(data);
+    const clean = cleanData(data);
     await set(ref(db,"tree"), clean);
     alert("Сақталды");
   }catch(e){
