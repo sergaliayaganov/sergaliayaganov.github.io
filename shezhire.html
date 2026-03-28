@@ -119,14 +119,17 @@ let root = null;
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
-
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
+// --- Автоматты сақтау функциясы ---
 function saveToFirebase() {
-  if (data) set(ref(db, "tree"), data);
+  if (!data) return;
+  set(ref(db, "tree"), data)
+    .then(() => console.log("Сақталды"))
+    .catch(err => console.error("Қате:", err));
 }
 
-// Деректерді жүктеу, егер жоқ болса root-ты орнату
+// Деректерді жүктеу
 onValue(ref(db, "tree"), snap => {
   if (snap.exists()) {
     data = snap.val();
@@ -155,12 +158,14 @@ function toggle(d) {
     d.children = d._children;
     d._children = null;
   }
+  saveToFirebase(); // ✅ Түйінді ашып/жабғанда автоматты сақтау
 }
 
 function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
+  // Ұзын есімдерге бейімделген овал ені
   let maxLen = 0;
   d3.hierarchy(data).descendants().forEach(d => {
     if (d.data.name.length > maxLen) maxLen = d.data.name.length;
@@ -188,6 +193,7 @@ function update() {
     selected = root;
   }
 
+  // --- Link ---
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -206,6 +212,7 @@ function update() {
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
+  // --- Nodes ---
   const nodes = g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -215,7 +222,6 @@ function update() {
     .on("click", (event, d) => {
       selected = d;
       toggle(d.data);
-      update();
     });
 
   nodes.each(function(d) {
@@ -304,11 +310,10 @@ document.getElementById("renameBtn").onclick = () => {
   if (newName && newName.trim()) {
     selected.data.name = newName.trim();
     update();
-    saveToFirebase();  // ✅ Автоматты сақтау
+    saveToFirebase(); // ✅ Автоматты сақтау
   }
 };
 
-// Бос қалдырамыз, қолмен сақтауды да қалдырдық
 document.getElementById("saveBtn").onclick = () => {
   saveToFirebase();
   alert("Сақталды");
