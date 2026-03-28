@@ -2,62 +2,29 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре толық</title>
+<title>Шежіре қосу</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
-#toolbar {position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px;}
 #tree {width:100vw; height:100vh;}
 .node rect {fill-opacity:0.35; stroke-width:2;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
-#modal {
- position:fixed; top:50%; left:50%;
- transform:translate(-50%,-50%);
- background:white; padding:20px;
- border-radius:10px; display:none;
- width:300px;
-}
-.childItem {background:#eee; margin:5px; padding:5px; border-radius:4px;}
 </style>
 </head>
 <body>
 
-<div id="toolbar">
-  <button id="addChildBtn">➕ Бала қосу</button>
-  <button id="renameBtn">✏️ Өзгерту</button>
-  <button id="deleteBtn">🗑️ Өшіру</button>
-  <button id="expandBtn">⯈ Жайылу/Жиналу</button>
-  <button id="saveBtn">💾 JSON экспорт</button>
-  <button id="importBtn">📂 JSON импорт</button>
-  <input type="file" id="importFile" style="display:none">
-</div>
-
 <svg id="tree"></svg>
 
-<div id="modal">
-  <h3>Бірнеше бала қосу</h3>
-  <input id="childName" placeholder="Аты" />
-  <select id="gender">
-    <option value="male">ер</option>
-    <option value="female">әйел</option>
-  </select>
-  <select id="type">
-    <option value="бала">бала</option>
-    <option value="жиен">жиен</option>
-  </select>
-  <br><br>
-  <button id="addMore">+ Қосу</button>
-  <button id="confirm">Дайын</button>
-  <button id="close">Жабу</button>
-  <div id="list"></div>
-</div>
-
 <script>
-let data = {name:"АЛАШ", gender:"male", type:"бала", children:[]};
+let data = {
+  name:"АЛАШ", gender:"male", type:"бала", children:[
+    {name:"Сейілхан", gender:"male", type:"бала", children:[]},
+    {name:"Жайлыхан", gender:"male", type:"бала", children:[]}
+  ]
+};
 let selected = null;
-let tempChildren = [];
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
@@ -108,7 +75,7 @@ function update(){
     .append("g")
     .attr("class","node")
     .attr("transform", d=>`translate(${d.y},${d.x})`)
-    .on("click",(e,d)=>{ selected=d; update(); });
+    .on("click",(e,d)=>{ selected=d; toggle(d.data); update(); });
 
   node.classed("selected", d=>d===selected);
 
@@ -125,111 +92,6 @@ function update(){
     .attr("dy",5)
     .text(d=>d.data.name);
 }
-
-// CLEAN
-function cleanData(node){
-  return {
-    name: node.name||"",
-    gender: node.gender||"male",
-    type: node.type||"бала",
-    children: Array.isArray(node.children)?node.children.map(cleanData):[]
-  };
-}
-
-// MODAL
-const modal = document.getElementById("modal");
-const list = document.getElementById("list");
-
-document.getElementById("addChildBtn").onclick = ()=>{
-  if(!selected){ alert("Адам таңдаңыз"); return; }
-  modal.style.display="block"; tempChildren=[]; list.innerHTML="";
-};
-
-document.getElementById("addMore").onclick = ()=>{
-  const name = document.getElementById("childName").value.trim();
-  if(!name){ alert("Аты жазылуы тиіс"); return; }
-  const gender = document.getElementById("gender").value;
-  const type = document.getElementById("type").value;
-  tempChildren.push({name, gender, type});
-  const div = document.createElement("div");
-  div.className="childItem";
-  div.textContent=`${name} (${gender}, ${type})`;
-  list.appendChild(div);
-  document.getElementById("childName").value="";
-};
-
-document.getElementById("confirm").onclick = ()=>{
-  if(tempChildren.length===0) return;
-  tempChildren.forEach(c=>{
-    if(!selected.data.children) selected.data.children=[];
-    selected.data.children.push({...c, children:[]});
-  });
-  modal.style.display="none";
-  update();
-};
-
-document.getElementById("close").onclick = ()=>{ modal.style.display="none"; };
-
-// RENAME
-document.getElementById("renameBtn").onclick = ()=>{
-  if(!selected){ alert("Таңдаңыз"); return; }
-  const name = prompt("Жаңа аты:", selected.data.name);
-  if(name) selected.data.name=name;
-  update();
-};
-
-// DELETE
-document.getElementById("deleteBtn").onclick = ()=>{
-  if(!selected){ alert("Таңдаңыз"); return; }
-  function removeNode(parent, child){
-    if(!parent.children) return false;
-    const index = parent.children.indexOf(child);
-    if(index>=0){ parent.children.splice(index,1); return true; }
-    for(let c of parent.children){ if(removeNode(c,child)) return true; }
-    return false;
-  }
-  if(selected===d3.hierarchy(data)){ alert("Түпкі түйінді өшіруге болмайды"); return; }
-  removeNode(data, selected.data);
-  selected=null;
-  update();
-};
-
-// EXPAND/COLLAPSE
-document.getElementById("expandBtn").onclick = ()=>{
-  if(!selected) return;
-  toggle(selected.data);
-  update();
-};
-
-// JSON EXPORT
-document.getElementById("saveBtn").onclick = ()=>{
-  const clean = cleanData(data);
-  const jsonStr = JSON.stringify(clean, null, 2);
-  const blob = new Blob([jsonStr], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url;
-  a.download="shezhire.json";
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-// JSON IMPORT
-document.getElementById("importBtn").onclick = ()=>{ document.getElementById("importFile").click(); };
-document.getElementById("importFile").onchange = async (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const text = await file.text();
-  try{
-    data = JSON.parse(text);
-    selected=null;
-    update();
-    alert("Шежіре жүктелді!");
-  }catch(err){
-    alert("JSON дұрыс емес");
-    console.error(err);
-  }
-};
 
 update();
 </script>
