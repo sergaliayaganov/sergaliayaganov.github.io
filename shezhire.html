@@ -63,7 +63,6 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden; }
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ✅ СЕНІҢ FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -173,7 +172,7 @@ function update() {
     .text(d=>d.data.name);
 }
 
-// --- UI ---
+// UI
 const modal = document.getElementById("modal");
 const list = document.getElementById("list");
 let tempChildren = [];
@@ -204,17 +203,31 @@ renameBtn.onclick = ()=>{
   if(name){ saveHistory(); node.name=name; autoSave(); update(); }
 };
 
-// delete
+// 🔥 DELETE (CONFIRM)
 const delBtn = document.createElement("button");
 delBtn.textContent="🗑 Өшіру";
 toolbar.appendChild(delBtn);
 
 delBtn.onclick = ()=>{
-  if(data.id===selectedId) return alert("Root өшірілмейді");
+  if (!selectedId) return;
+
+  const node = findNode(data, selectedId);
+
+  if (data.id === selectedId) {
+    alert("Негізгі адамды өшіруге болмайды");
+    return;
+  }
+
+  const ok = confirm(`"${node.name}" өшірілсін бе? (ұрпақтарымен бірге)`);
+
+  if (!ok) return;
+
   saveHistory();
   deleteNode(data, selectedId);
-  selectedId=data.id;
-  autoSave(); update();
+  selectedId = data.id;
+
+  autoSave();
+  update();
 };
 
 // undo
