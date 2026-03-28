@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре</title>
+<title>Шежіре 2</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -13,6 +13,7 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 .node rect {fill-opacity:0.35; stroke-width:2;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
+.selected rect {stroke:red; stroke-width:3;}
 #modal {position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
 background:white; padding:20px; border-radius:10px; display:none;}
 </style>
@@ -36,17 +37,22 @@ background:white; padding:20px; border-radius:10px; display:none;}
   </select>
   <br><br>
   <button id="addMore">+ Қосу</button>
-  <button id="confirm">Дайын</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// 🔥 СЕНІҢ CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
   databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
+  projectId: "shezhire-site",
+  storageBucket: "shezhire-site.firebasestorage.app",
+  messagingSenderId: "714823841418",
+  appId: "1:714823841418:web:99333d2aba6d57857b1f73",
+  measurementId: "G-8V6NR3MHYC"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -74,17 +80,28 @@ function update() {
   g.selectAll("*").remove();
   if (!data) return;
 
+  const nodeWidth = 120;
+
   const root = d3.hierarchy(data);
   d3.tree().nodeSize([80,200])(root);
 
-  const link = g.selectAll(".link")
+  // ✅ СЫЗЫҚ FIX
+  g.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
     .attr("class","link")
-    .attr("d", d3.linkHorizontal()
-      .x(d=>d.y)
-      .y(d=>d.x));
+    .attr("d", d => {
+      const sx = d.source.y + nodeWidth/2;
+      const sy = d.source.x;
+
+      const ex = d.target.y - nodeWidth/2;
+      const ey = d.target.x;
+
+      const mx = (sx + ex) / 2;
+
+      return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
+    });
 
   const node = g.selectAll(".node")
     .data(root.descendants())
@@ -92,7 +109,13 @@ function update() {
     .append("g")
     .attr("class","node")
     .attr("transform", d=>`translate(${d.y},${d.x})`)
-    .on("click",(e,d)=> selected=d);
+    .on("click",(e,d)=>{
+      selected = d;
+      update();
+    });
+
+  // highlight
+  node.classed("selected", d => d === selected);
 
   node.append("rect")
     .attr("x",-60).attr("y",-20)
@@ -106,7 +129,7 @@ function update() {
     .text(d=>d.data.name);
 }
 
-// 🔥 МАҢЫЗДЫ — CLEAN FUNCTION
+// 🔥 CLEAN (Firebase fix)
 function cleanData(node){
   return {
     name: node.name,
@@ -116,14 +139,17 @@ function cleanData(node){
 }
 
 // ➕ Бала қосу
-document.getElementById("addMore").onclick = () => {
-  const name = document.getElementById("childName").value.trim();
-  if (!name) return alert("Аты керек");
+document.getElementById("addChildBtn").onclick = () => {
+  if (!selected) return alert("Адам таңдаңыз");
 
-  if (!selected.data.children) selected.data.children=[];
+  const name = prompt("Бала аты:");
+  if (!name) return;
+
+  if (!selected.data.children) selected.data.children = [];
+
   selected.data.children.push({
     name,
-    gender: document.getElementById("gender").value,
+    gender:"male",
     children:[]
   });
 
@@ -133,12 +159,15 @@ document.getElementById("addMore").onclick = () => {
 // ✏️ Өзгерту
 document.getElementById("renameBtn").onclick = () => {
   if (!selected) return alert("Таңда");
-  const name = prompt("Аты:", selected.data.name);
-  if (name) selected.data.name = name;
-  update();
+
+  const name = prompt("Жаңа аты:", selected.data.name);
+  if (name) {
+    selected.data.name = name;
+    update();
+  }
 };
 
-// 💾 САҚТАУ (FIXED)
+// 💾 САҚТАУ
 document.getElementById("saveBtn").onclick = async () => {
   try{
     const clean = cleanData(data);
