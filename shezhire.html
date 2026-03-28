@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 01</title>
+<title>Шежіре 05</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -14,13 +14,8 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
-
-#modal {
- position:fixed; top:50%; left:50%;
- transform:translate(-50%,-50%);
- background:white; padding:20px;
- border-radius:10px; display:none;
-}
+#modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+ background:white; padding:20px; border-radius:10px; display:none;}
 .childItem {background:#eee; margin:5px; padding:5px;}
 </style>
 </head>
@@ -74,9 +69,9 @@ let tempChildren = [];
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
-
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
+// --- LOAD DATA ---
 onValue(ref(db, "tree"), snap => {
   data = snap.exists() ? snap.val() : {
     name:"АЛАШ",
@@ -87,34 +82,35 @@ onValue(ref(db, "tree"), snap => {
   update();
 });
 
-// ✅ toggle тек D3 node-қа
+// --- COLLAPSE TOGGLE ---
 function toggle(d){
-  if(d.children){
-    d._children = d.children;
-    d.children = null;
-  } else {
-    d.children = d._children;
-    d._children = null;
-  }
+  d.data.collapsed = !d.data.collapsed;
 }
 
+// --- UPDATE TREE ---
 function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  // ✅ DYNAMIC WIDTH
+  // --- dynamic node width ---
   let maxLen = 0;
-  d3.hierarchy(data).descendants().forEach(d=>{
+  d3.hierarchy(data).descendants().forEach(d => {
     if(d.data.name.length > maxLen) maxLen = d.data.name.length;
   });
-
   const charWidth = 9;
-  const nodeWidth = Math.max(140, maxLen * charWidth + 40);
+  const padding = 40;
+  const nodeWidth = Math.max(120, maxLen*charWidth + padding);
+  const nodeHeight = 40;
+  const radius = nodeHeight/2;
 
-  const root = d3.hierarchy(data, d => d.children);
-  d3.tree().nodeSize([80, nodeWidth + 100])(root);
+  const horizontalGap = nodeWidth + 120;
+  const verticalGap = 80;
 
-  // links
+  // --- hierarchy with collapse ---
+  const root = d3.hierarchy(data, d => d.collapsed ? null : d.children);
+  d3.tree().nodeSize([verticalGap,horizontalGap])(root);
+
+  // --- links ---
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -131,6 +127,7 @@ function update(){
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
+  // --- nodes ---
   const node = g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -139,7 +136,7 @@ function update(){
     .attr("transform", d=>`translate(${d.y},${d.x})`)
     .on("click",(e,d)=>{
       selected=d;
-      toggle(d); // 🔥 FIX
+      toggle(d);
       update();
     });
 
@@ -147,11 +144,13 @@ function update(){
 
   node.append("rect")
     .attr("x",-nodeWidth/2)
-    .attr("y",-20)
+    .attr("y",-nodeHeight/2)
     .attr("width",nodeWidth)
-    .attr("height",40)
-    .attr("rx",20)
-    .attr("fill", d=>d.data.gender==="female"?"#f7a6c6":"#8bb7ff");
+    .attr("height",nodeHeight)
+    .attr("rx",radius)
+    .attr("fill", d=>d.data.gender==="female"?"#f7a6c6":"#8bb7ff")
+    .attr("stroke", d=>d.data.type==="жиен"?"gold":(d.data.gender==="female"?"#d95380":"#3b70d6"))
+    .attr("stroke-width", d=>d.data.type==="жиен"?4:2);
 
   node.append("text")
     .attr("text-anchor","middle")
@@ -159,15 +158,13 @@ function update(){
     .text(d=>d.data.name);
 }
 
-// ✅ CLEAN (cycle толық жояды)
+// --- CLEAN DATA FOR FIREBASE ---
 function cleanData(node){
   return {
     name: node.name || "",
     gender: node.gender || "male",
     type: node.type || "бала",
-    children: Array.isArray(node.children)
-      ? node.children.map(cleanData)
-      : []
+    children: Array.isArray(node.children) ? node.children.map(cleanData) : []
   };
 }
 
@@ -211,7 +208,7 @@ document.getElementById("confirm").onclick = ()=>{
   update();
 };
 
-// rename
+// --- rename ---
 document.getElementById("renameBtn").onclick = ()=>{
   if(!selected) return alert("Таңда");
   const name=prompt("Жаңа аты:", selected.data.name);
@@ -219,7 +216,7 @@ document.getElementById("renameBtn").onclick = ()=>{
   update();
 };
 
-// SAVE
+// --- SAVE ---
 document.getElementById("saveBtn").onclick = async ()=>{
   try{
     const clean=cleanData(data);
