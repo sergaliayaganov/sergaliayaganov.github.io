@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8" />
-<title>Шежіре 03</title>
+<title>Шежіре - Safe Save</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -14,14 +14,8 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 .node text {font-size:14px; font-weight:bold; pointer-events:none;}
 .link {fill:none; stroke:#999; stroke-width:2;}
 .selected rect {stroke:red; stroke-width:3;}
-
-#modal {
- position:fixed; top:50%; left:50%;
- transform:translate(-50%,-50%);
- background:white; padding:20px;
- border-radius:10px; display:none;
- width:300px;
-}
+#modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+ background:white; padding:20px; border-radius:10px; display:none; width:300px; }
 .childItem {background:#eee; margin:5px; padding:5px; border-radius:5px;}
 </style>
 </head>
@@ -58,7 +52,7 @@ body { margin:0; font-family:Arial; background:#f2f2f2; overflow:hidden;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Firebase конфиг
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
@@ -78,10 +72,8 @@ let tempChildren = [];
 
 const svg = d3.select("#tree");
 const g = svg.append("g");
-
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// Firebase-тен оқу
 onValue(ref(db, "tree"), snap => {
   data = snap.exists() ? snap.val() : { name:"АЛАШ", gender:"male", type:"бала", children:[] };
   update();
@@ -89,37 +81,29 @@ onValue(ref(db, "tree"), snap => {
 
 // collapse
 function toggle(d){
-  if(d.children){
-    d._children = d.children;
-    d.children = null;
-  } else {
-    d.children = d._children;
-    d._children = null;
-  }
+  if(d.children){ d._children=d.children; d.children=null; } 
+  else { d.children=d._children; d._children=null; }
 }
 
+// dynamic width
+function computeNodeWidth(root){
+  let maxLen=0;
+  root.descendants().forEach(d=>{ if(d.data.name.length>maxLen) maxLen=d.data.name.length; });
+  return Math.max(120, maxLen*9+40);
+}
+
+// tree update
 function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  // динамикалық nodeWidth есімге қарай
-  let maxLen = 0;
-  d3.hierarchy(data).descendants().forEach(d=>{
-    if(d.data.name.length > maxLen) maxLen = d.data.name.length;
-  });
-  const charWidth = 9;
-  const padding = 40;
-  const nodeWidth = Math.max(120, maxLen * charWidth + padding);
+  const root = d3.hierarchy(data, d=>d.children);
+  const nodeWidth = computeNodeWidth(root);
   const nodeHeight = 40;
   const radius = nodeHeight/2;
 
-  const horizontalGap = nodeWidth + 120;
-  const verticalGap = 80;
+  d3.tree().nodeSize([80, nodeWidth+80])(root);
 
-  const root = d3.hierarchy(data, d => d.children);
-  d3.tree().nodeSize([verticalGap, horizontalGap])(root);
-
-  // links
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -142,11 +126,7 @@ function update(){
     .append("g")
     .attr("class","node")
     .attr("transform", d=>`translate(${d.y},${d.x})`)
-    .on("click",(e,d)=>{
-      selected=d;
-      toggle(d.data);
-      update();
-    });
+    .on("click",(e,d)=>{ selected=d; toggle(d.data); update(); });
 
   nodes.classed("selected", d=>d===selected);
 
@@ -167,7 +147,7 @@ function update(){
     .text(d=>d.data.name);
 }
 
-// Firebase-қа жазар алдында тек қажетті деректерді ғана сақтау
+// cleanData, remove cycles and UI props
 function cleanData(node){
   return {
     name: node.name || "",
@@ -177,62 +157,57 @@ function cleanData(node){
   };
 }
 
+// --- SAFE SAVE WITH CHUNKING ---
+function chunkedSave(node, maxDepth=16){
+  if(!node) return null;
+  if(maxDepth<=0){
+    // cut here: save as "chunk" node
+    return { name: node.name, gender: node.gender, type: node.type, childrenChunk: node.children?.map(cleanData) || [] };
+  }
+  return {
+    name: node.name,
+    gender: node.gender,
+    type: node.type,
+    children: Array.isArray(node.children) ? node.children.map(c => chunkedSave(c, maxDepth-1)) : []
+  };
+}
+
 // --- MODAL ---
-const modal = document.getElementById("modal");
-const list = document.getElementById("list");
+const modal=document.getElementById("modal");
+const list=document.getElementById("list");
 
 document.getElementById("addChildBtn").onclick = ()=>{
   if(!selected) return alert("Адам таңдаңыз");
-  modal.style.display="block";
-  tempChildren=[];
-  list.innerHTML="";
+  modal.style.display="block"; tempChildren=[]; list.innerHTML="";
 };
-
 document.getElementById("addMore").onclick = ()=>{
-  const name = document.getElementById("childName").value.trim();
+  const name=document.getElementById("childName").value.trim();
   if(!name) return alert("Аты керек");
-  const gender = document.getElementById("gender").value;
-  const type = document.getElementById("type").value;
+  const gender=document.getElementById("gender").value;
+  const type=document.getElementById("type").value;
   tempChildren.push({name, gender, type});
-
-  const div = document.createElement("div");
-  div.className="childItem";
+  const div=document.createElement("div"); div.className="childItem";
   div.textContent=`${name} (${gender}, ${type})`;
-  list.appendChild(div);
-
-  document.getElementById("childName").value="";
+  list.appendChild(div); document.getElementById("childName").value="";
 };
-
 document.getElementById("confirm").onclick = ()=>{
   if(tempChildren.length===0) return;
-  tempChildren.forEach(c=>{
-    if(!selected.data.children) selected.data.children=[];
-    selected.data.children.push({...c, children:[]});
-  });
-  modal.style.display="none";
-  update();
+  tempChildren.forEach(c=>{ if(!selected.data.children) selected.data.children=[]; selected.data.children.push({...c, children:[]}); });
+  modal.style.display="none"; update();
 };
-
 document.getElementById("close").onclick = ()=>{ modal.style.display="none"; };
-
-// rename
 document.getElementById("renameBtn").onclick = ()=>{
-  if(!selected) return alert("Таңда");
-  const name=prompt("Жаңа аты:", selected.data.name);
-  if(name) selected.data.name=name;
-  update();
+  if(!selected) return alert("Таңда"); const name=prompt("Жаңа аты:", selected.data.name); if(name) selected.data.name=name; update();
 };
 
-// save
+// SAVE
 document.getElementById("saveBtn").onclick = async ()=>{
   try{
     const clean = cleanData(data);
-    await set(ref(db,"tree"), clean);
-    alert("Сақталды");
-  }catch(e){
-    alert("Қате: "+e.message);
-    console.error(e);
-  }
+    const chunked = chunkedSave(clean, 16);
+    await set(ref(db,"tree"), chunked);
+    alert("Сақталды (chunked)");
+  }catch(e){ alert("Қате: "+e.message); console.error(e); }
 };
 </script>
 
