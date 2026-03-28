@@ -101,7 +101,7 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 const firebaseConfig = {
   apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
   authDomain: "shezhire-site.firebaseapp.com",
-  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "shezhire-site",
   storageBucket: "shezhire-site.firebasestorage.app",
   messagingSenderId: "714823841418",
@@ -142,10 +142,13 @@ onValue(ref(db, "tree"), snap => {
 });
 
 // --- Firebase сақтау функциясы ---
-function saveToFirebase() {
-  set(ref(db, "tree"), data)
-    .then(() => console.log("Өзгерістер сақталды"))
-    .catch(err => console.error("Қате:", err));
+async function saveToFirebase() {
+  try {
+    await set(ref(db, "tree"), data);
+    console.log("Өзгерістер Firebase-ке сақталды");
+  } catch (error) {
+    console.error("Firebase-ке жазуда қате:", error);
+  }
 }
 
 // --- Деректерді визуалдау ---
@@ -271,7 +274,7 @@ document.getElementById("confirm").onclick = () => {
   });
   modal.style.display = "none";
   update();
-  saveToFirebase(); // ✅ автоматты сақтау
+  await saveToFirebase(); // ✅ автоматты сақтау
 };
 
 document.getElementById("close").onclick = () => { modal.style.display = "none"; };
@@ -282,7 +285,7 @@ document.getElementById("renameBtn").onclick = () => {
   if (newName && newName.trim()) {
     selected.data.name = newName.trim();
     update();
-    saveToFirebase(); // ✅ автоматты сақтау
+    saveToFirebase().then(() => console.log("Сақталды")).catch(console.error); // ✅ автоматты сақтау
   }
 };
 
