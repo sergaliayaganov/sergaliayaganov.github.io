@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <title>Шежіре FINAL PRO</title>
-
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-
 <style>
 body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
 #toolbar { position:absolute; top:0; left:0; right:0; background:white; padding:10px; display:flex; gap:8px; }
@@ -19,7 +17,6 @@ body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
 .childItem { background:#eee; margin:5px 0; padding:5px 10px; border-radius:5px; }
 </style>
 </head>
-
 <body>
 <div id="toolbar">
   <button id="addChildBtn">➕ Бала қосу</button>
@@ -49,7 +46,7 @@ body { margin:0; font-family: Arial; background:#f2f2f2; overflow:hidden; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // Firebase конфиг
 const firebaseConfig = {
@@ -74,19 +71,12 @@ const svg = d3.select("#tree");
 const g = svg.append("g");
 svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
-// --- Автоматты сақтау функциясы ---
-function saveToFirebase() {
-  if(!data) return;
-  set(ref(db,"tree"),data)
-    .then(()=>console.log("Сақталды Firebase-та"))
-    .catch(err=>console.error("Қате:",err));
-}
-
 // --- Деректерді жүктеу ---
-onValue(ref(db,"tree"),snap=>{
-  if(snap.exists()){ data=snap.val(); }
-  else{
-    data={
+onValue(ref(db,"tree"), snap => {
+  if(snap.exists()){
+    data = snap.val();
+  } else {
+    data = {
       name:"АЛАШ",
       gender:"male",
       type:"бала",
@@ -95,18 +85,16 @@ onValue(ref(db,"tree"),snap=>{
         { name:"Жайлыхан", gender:"male", type:"бала", children:[] }
       ]
     };
-    saveToFirebase();
   }
-  root = d3.hierarchy(data,d=>d.children);
-  selected=root;
+  root = d3.hierarchy(data, d=>d.children);
+  selected = root;
   update();
 });
 
-// --- Түйінді ашып/жабу (визуалды + автоматты сақтау) ---
+// --- Түйінді ашып/жабу ---
 function toggle(d){
   if(d.children){ d._children=d.children; d.children=null; }
   else if(d._children){ d.children=d._children; d._children=null; }
-  saveToFirebase(); // ← визуалды toggle-ды да Firebase-та сақтаймыз
 }
 
 // --- Ағашты жаңарту ---
@@ -114,7 +102,6 @@ function update(){
   g.selectAll("*").remove();
   if(!data) return;
 
-  // Ұзын есімге бейімделген овал енін есептеу
   let maxLen=0;
   d3.hierarchy(data).descendants().forEach(d=>{ if(d.data.name.length>maxLen) maxLen=d.data.name.length; });
   const charWidth=9, padding=40;
@@ -131,9 +118,9 @@ function update(){
     let found=null;
     root.each(d=>{ if(d.data===selected.data) found=d; });
     selected=found||root;
-  }else{ selected=root; }
+  } else { selected=root; }
 
-  // --- Links ---
+  // Links
   g.selectAll(".link")
     .data(root.links())
     .enter()
@@ -147,7 +134,7 @@ function update(){
       return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
     });
 
-  // --- Nodes ---
+  // Nodes
   const nodes=g.selectAll(".node")
     .data(root.descendants())
     .enter()
@@ -205,7 +192,6 @@ document.getElementById("addMore").onclick=()=>{
   nameInput.focus();
 };
 
-// ✅ Бала қосу + Firebase-та автоматты сақтау
 document.getElementById("confirm").onclick=()=>{
   if(tempChildren.length===0){ alert("Кем дегенде бір бала қосыңыз"); return; }
   if(!selected.data.children) selected.data.children=[];
@@ -213,24 +199,24 @@ document.getElementById("confirm").onclick=()=>{
   tempChildren=[];
   modal.style.display="none";
   update();
-  saveToFirebase();
 };
 
 document.getElementById("close").onclick=()=>{ modal.style.display="none"; };
-
 document.getElementById("renameBtn").onclick=()=>{
   if(!selected){ alert("Түйінді таңдаңыз"); return; }
   const newName=prompt("Жаңа аты:",selected.data.name);
   if(newName && newName.trim()){
     selected.data.name=newName.trim();
     update();
-    saveToFirebase(); // ← автоматты сақтау
   }
 };
 
+// --- Сақтау Firebase-де (push) ---
 document.getElementById("saveBtn").onclick=()=>{
-  saveToFirebase();
-  alert("Сақталды");
+  const treesRef = ref(db,"trees"); // жаңа коллекция
+  push(treesRef, data)
+    .then(()=>alert("Ағаш Firebase-де сақталды!"))
+    .catch(err=>alert("Қате: "+err));
 };
 
 function clearInputs(){
