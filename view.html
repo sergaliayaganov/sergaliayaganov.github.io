@@ -43,7 +43,7 @@ body {
 
 <script>
 
-// 🔥 SVG
+// SVG
 const svg = d3.select("#tree");
 const g = svg.append("g");
 
@@ -51,7 +51,7 @@ svg.call(d3.zoom().on("zoom", e => g.attr("transform", e.transform)));
 
 let root;
 
-// 🔥 collapse
+// collapse
 function collapseAll(d, level = 0) {
   if (d.children) {
     if (level >= 1) {
@@ -64,14 +64,12 @@ function collapseAll(d, level = 0) {
   }
 }
 
-// 🔥 JSON ОҚУ
+// JSON оқу
 fetch('shezhire.json')
   .then(res => res.json())
   .then(data => {
-
     root = d3.hierarchy(data);
     collapseAll(root);
-
     update();
   });
 
@@ -103,12 +101,14 @@ function update() {
   const treeLayout = d3.tree().nodeSize([80, nodeWidth + 120]);
   treeLayout(root);
 
-  // link
+  // 🔥 LINKS (жиен болса алтын)
   g.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
     .attr("class", "link")
+    .attr("stroke", d => d.target.data.type === "жиен" ? "gold" : "#999")
+    .attr("stroke-width", d => d.target.data.type === "жиен" ? 4 : 2)
     .attr("d", d => {
       const startX = d.source.y + nodeWidth / 2;
       const startY = d.source.x;
@@ -139,15 +139,30 @@ function update() {
       update();
     });
 
+  // 🔥 RECT (жыныс + жиен логикасы)
   enter.append("rect")
     .attr("x", -nodeWidth / 2)
     .attr("y", -nodeHeight / 2)
     .attr("width", nodeWidth)
     .attr("height", nodeHeight)
     .attr("rx", nodeHeight / 2)
-    .attr("fill", "#8bb7ff")
-    .attr("stroke", "#3b70d6")
-    .attr("stroke-width", 2);
+
+    // ішкі түс (gender)
+    .attr("fill", d =>
+      d.data.gender === "female" ? "#f7a6c6" : "#8bb7ff"
+    )
+
+    // шекара (type + gender)
+    .attr("stroke", d =>
+      d.data.type === "жиен"
+        ? "gold"
+        : (d.data.gender === "female" ? "#d95380" : "#3b70d6")
+    )
+
+    // қалыңдық
+    .attr("stroke-width", d =>
+      d.data.type === "жиен" ? 4 : 2
+    );
 
   enter.append("text")
     .attr("text-anchor", "middle")
