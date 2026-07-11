@@ -6,45 +6,95 @@
     <title>Зейнетке шығу тойына шақыру</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-<header>
-    <h1>🎉 Зейнетке шығу тойына шақыру 🎉</h1>
-    <p>Сізді салтанатты кешімізге шақырамыз!</p>
-</header>
+<div class="overlay">
 
-<section class="card">
-    <h2>📅 Той туралы</h2>
+<div class="card">
 
-    <p><b>Күні:</b> 20 желтоқсан 2026</p>
-    <p><b>Уақыты:</b> 18:00</p>
-    <p><b>Өтетін орны:</b> «Ақ Сарай» мейрамханасы</p>
-</section>
+<h1>🎉</h1>
 
-<section class="card">
+<h2>ЗЕЙНЕТКЕ ШЫҒУ ТОЙЫ</h2>
+
+<p class="invite">
+
+Құрметті қонақ!
+
+<br><br>
+
+Сізді аяулы ұстазымыз
+
+<strong>________________________________</strong>
+
+зейнетке шығуына арналған
+
+салтанатты кешке шақырамыз.
+
+</p>
+
+<hr>
+
+<div class="info">
+
+<p>📅 <b>Күні:</b> 20 желтоқсан 2026</p>
+
+<p>🕕 <b>Уақыты:</b> 18:00</p>
+
+<p>📍 <b>Мекенжай:</b> Ақ Сарай мейрамханасы</p>
+
+</div>
+
+<h3>Тойдың басталуына</h3>
+
+<div id="countdown"></div>
+
+<hr>
 
 <h2>Қатысатыныңызды растаңыз</h2>
 
-<input type="text" id="name" placeholder="Аты-жөніңіз">
+<form id="guestForm">
 
-<input type="number" id="guest" placeholder="Қонақ саны">
+<input
+type="text"
+id="name"
+placeholder="Аты-жөніңіз"
+required>
 
-<button onclick="registerGuest()">
-Тіркелу
+<input
+type="tel"
+id="phone"
+placeholder="Телефон">
+
+<input
+type="number"
+id="guestCount"
+placeholder="Қонақ саны"
+value="1"
+min="1">
+
+<button type="submit">
+
+✅ Қатысатынымды растаймын
+
 </button>
 
-</section>
+</form>
 
-<section class="card">
+<p id="message"></p>
 
-<h2>Тіркелген қонақтар</h2>
+</div>
 
-<ul id="guestList"></ul>
+</div>
 
-</section>
+<script type="module" src="firebase.js"></script>
 
 <script type="module" src="script.js"></script>
 
 </body>
+
 </html>
