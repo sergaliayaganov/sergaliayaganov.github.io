@@ -14,17 +14,14 @@ getDocs
 
 const firebaseConfig = {
 
-apiKey: "YOUR_API_KEY",
-
-authDomain: "YOUR_PROJECT.firebaseapp.com",
-
-projectId: "YOUR_PROJECT",
-
-storageBucket: "YOUR_PROJECT.appspot.com",
-
-messagingSenderId: "XXXXXXXX",
-
-appId: "XXXXXXXX"
+apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
+  authDomain: "shezhire-site.firebaseapp.com",
+ databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
+  projectId: "shezhire-site",
+  storageBucket: "shezhire-site.firebasestorage.app",
+  messagingSenderId: "714823841418",
+  appId: "1:714823841418:web:99333d2aba6d57857b1f73",
+  measurementId: "G-8V6NR3MHYC"
 
 };
 
