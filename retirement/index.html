@@ -1,1 +1,50 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Зейнетке шығу тойына шақыру</title>
 
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>🎉 Зейнетке шығу тойына шақыру 🎉</h1>
+    <p>Сізді салтанатты кешімізге шақырамыз!</p>
+</header>
+
+<section class="card">
+    <h2>📅 Той туралы</h2>
+
+    <p><b>Күні:</b> 20 желтоқсан 2026</p>
+    <p><b>Уақыты:</b> 18:00</p>
+    <p><b>Өтетін орны:</b> «Ақ Сарай» мейрамханасы</p>
+</section>
+
+<section class="card">
+
+<h2>Қатысатыныңызды растаңыз</h2>
+
+<input type="text" id="name" placeholder="Аты-жөніңіз">
+
+<input type="number" id="guest" placeholder="Қонақ саны">
+
+<button onclick="registerGuest()">
+Тіркелу
+</button>
+
+</section>
+
+<section class="card">
+
+<h2>Тіркелген қонақтар</h2>
+
+<ul id="guestList"></ul>
+
+</section>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>
