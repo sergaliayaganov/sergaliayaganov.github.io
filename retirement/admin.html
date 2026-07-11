@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Қонақтар тізімі</title>
 
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f5f5;
+    padding:30px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,.15);
+}
+
+h1{
+    text-align:center;
+    color:#8B5E3C;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:25px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:12px;
+    text-align:center;
+}
+
+th{
+    background:#C89B3C;
+    color:white;
+}
+
+tr:nth-child(even){
+    background:#f8f8f8;
+}
+
+.total{
+    margin-top:25px;
+    font-size:22px;
+    font-weight:bold;
+    text-align:right;
+    color:#00695c;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Тіркелген қонақтар</h1>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>№</th>
+
+<th>Аты-жөні</th>
+
+<th>Телефон</th>
+
+<th>Қонақ саны</th>
+
+<th>Тіркелген уақыты</th>
+
+</tr>
+
+</thead>
+
+<tbody id="guestTable">
+
+</tbody>
+
+</table>
+
+<div class="total">
+
+Жалпы қонақ саны:
+<span id="totalGuests">0</span>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+
+getFirestore,
+
+collection,
+
+getDocs,
+
+query,
+
+orderBy
+
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
+
+authDomain: "shezhire-site.firebaseapp.com",
+
+projectId: "shezhire-site",
+
+storageBucket: "shezhire-site.firebasestorage.app",
+
+messagingSenderId: "714823841418",
+
+appId: "1:714823841418:web:99333d2aba6d57857b1f73"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const tbody=document.getElementById("guestTable");
+
+const total=document.getElementById("totalGuests");
+
+let totalGuests=0;
+
+async function loadGuests(){
+
+const q=query(collection(db,"guests"),orderBy("createdAt","desc"));
+
+const snapshot=await getDocs(q);
+
+let no=1;
+
+snapshot.forEach(doc=>{
+
+const data=doc.data();
+
+const tr=document.createElement("tr");
+
+let date="";
+
+if(data.createdAt){
+
+date=data.createdAt.toDate().toLocaleString("kk-KZ");
+
+}
+
+tr.innerHTML=`
+
+<td>${no++}</td>
+
+<td>${data.name||""}</td>
+
+<td>${data.phone||""}</td>
+
+<td>${data.guestCount||1}</td>
+
+<td>${date}</td>
+
+`;
+
+tbody.appendChild(tr);
+
+totalGuests+=Number(data.guestCount||1);
+
+});
+
+total.innerHTML=totalGuests;
+
+}
+
+loadGuests();
+
+</script>
+
+</body>
+</html>
