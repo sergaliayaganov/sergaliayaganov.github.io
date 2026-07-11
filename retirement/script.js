@@ -1,78 +1,113 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { db } from "./firebase.js";
 
 import {
-
-getFirestore,
-
-collection,
-
-addDoc,
-
-getDocs
-
+    collection,
+    addDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
+// ==========================
+// Кері санау таймері
+// ==========================
 
-apiKey: "AIzaSyB9oEdAGpIaPtNZjFvsfIAKVFKOzrIdvE4",
-  authDomain: "shezhire-site.firebaseapp.com",
- databaseURL: "https://shezhire-site-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "shezhire-site",
-  storageBucket: "shezhire-site.firebasestorage.app",
-  messagingSenderId: "714823841418",
-  appId: "1:714823841418:web:99333d2aba6d57857b1f73",
-  measurementId: "G-8V6NR3MHYC"
+const weddingDate = new Date("2026-12-20T18:00:00").getTime();
 
-};
+function updateCountdown() {
 
-const app = initializeApp(firebaseConfig);
+    const now = new Date().getTime();
 
-const db = getFirestore(app);
+    const distance = weddingDate - now;
 
-window.registerGuest = async function(){
+    if (distance <= 0) {
 
-const name=document.getElementById("name").value;
+        document.getElementById("countdown").innerHTML =
+            "🎉 Той басталды!";
 
-const guest=document.getElementById("guest").value;
+        return;
+    }
 
-if(name==""){
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
 
-alert("Атыңызды енгізіңіз");
+    const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24))
+        / (1000 * 60 * 60)
+    );
 
-return;
+    const minutes = Math.floor(
+        (distance % (1000 * 60 * 60))
+        / (1000 * 60)
+    );
 
+    const seconds = Math.floor(
+        (distance % (1000 * 60))
+        / 1000
+    );
+
+    document.getElementById("countdown").innerHTML =
+        `${days} күн ${hours} сағат ${minutes} минут ${seconds} секунд`;
 }
 
-await addDoc(collection(db,"guests"),{
+updateCountdown();
 
-name:name,
+setInterval(updateCountdown, 1000);
 
-guest:guest
+
+// ==========================
+// RSVP
+// ==========================
+
+const form = document.getElementById("guestForm");
+
+form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const name =
+        document.getElementById("name").value.trim();
+
+    const phone =
+        document.getElementById("phone").value.trim();
+
+    const guestCount =
+        parseInt(document.getElementById("guestCount").value);
+
+    if (name === "") {
+
+        alert("Аты-жөніңізді енгізіңіз!");
+
+        return;
+    }
+
+    try {
+
+        await addDoc(collection(db, "guests"), {
+
+            name: name,
+
+            phone: phone,
+
+            guestCount: guestCount,
+
+            createdAt: serverTimestamp()
+
+        });
+
+        document.getElementById("message").innerHTML =
+            "✅ Рақмет! Қатысуыңыз тіркелді.";
+
+        form.reset();
+
+        document.getElementById("guestCount").value = 1;
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        document.getElementById("message").innerHTML =
+            "❌ Қате орын алды.";
+
+    }
 
 });
-
-alert("Тіркелдіңіз!");
-
-loadGuests();
-
-}
-
-async function loadGuests(){
-
-const list=document.getElementById("guestList");
-
-list.innerHTML="";
-
-const querySnapshot=await getDocs(collection(db,"guests"));
-
-querySnapshot.forEach((doc)=>{
-
-const data=doc.data();
-
-list.innerHTML+=`<li>${data.name} - Қонақ саны: ${data.guest}</li>`;
-
-});
-
-}
-
-loadGuests();
