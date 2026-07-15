@@ -26,6 +26,16 @@ const whatsapp = document.getElementById("whatsappShare");
 
 openBtn.addEventListener("click", () => {
 
+    // Музыканы іске қосу
+    music.volume = 0.2;
+    music.play().catch(err => {
+        console.log("Музыканы ойнату мүмкін болмады:", err);
+    });
+
+    playing = true;
+    musicBtn.innerHTML = "🔇 Музыканы тоқтату";
+
+    // Конверт анимациясы
     welcome.classList.add("hide");
 
     setTimeout(() => {
@@ -43,7 +53,6 @@ openBtn.addEventListener("click", () => {
     }, 900);
 
 });
-
 /* ==========================
    Countdown
 ========================== */
