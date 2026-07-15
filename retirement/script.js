@@ -16,9 +16,12 @@ const openBtn = document.getElementById("openInvitation");
 const countdown = document.getElementById("countdown");
 
 const music = document.getElementById("music");
-const musicBtn = document.getElementById("musicBtn");
 
 const whatsapp = document.getElementById("whatsappShare");
+
+/* ==========================
+   Конверт
+========================== */
 
 /* ==========================
    Конверт
@@ -28,14 +31,12 @@ openBtn.addEventListener("click", () => {
 
     // Музыканы іске қосу
     music.volume = 0.2;
+
     music.play().catch(err => {
         console.log("Музыканы ойнату мүмкін болмады:", err);
     });
 
-    playing = true;
-    musicBtn.innerHTML = "🔇 Музыканы тоқтату";
-
-    // Конверт анимациясы
+    // Конвертті жабу
     welcome.classList.add("hide");
 
     setTimeout(() => {
@@ -53,6 +54,7 @@ openBtn.addEventListener("click", () => {
     }, 900);
 
 });
+
 /* ==========================
    Countdown
 ========================== */
@@ -111,34 +113,6 @@ https://sergaliayaganov.github.io/retirement/`;
 whatsapp.href=
 
 `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-
-/* ==========================
-   Музыка
-========================== */
-
-let playing=false;
-
-musicBtn.addEventListener("click",()=>{
-
-    if(!playing){
-
-        music.play();
-
-        playing=true;
-
-        musicBtn.innerHTML="🔇 Музыканы тоқтату";
-
-    }else{
-
-        music.pause();
-
-        playing=false;
-
-        musicBtn.innerHTML="🎵 Музыканы қосу";
-
-    }
-
-});
 
 /* ==========================
    RSVP (Firestore)
