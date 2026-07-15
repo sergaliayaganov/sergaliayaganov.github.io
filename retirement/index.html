@@ -1,83 +1,149 @@
 <!DOCTYPE html>
 <html lang="kk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Зейнетке шығу тойына шақыру</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="style.css">
+<title>Зейнетке шығу тойына шақыру</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
+
 </head>
 
 <body>
 
-<div class="overlay">
+<!-- Алтын түсті бөлшектер -->
+<div class="sparkle s1"></div>
+<div class="sparkle s2"></div>
+<div class="sparkle s3"></div>
+<div class="sparkle s4"></div>
 
-<div class="card">
+<!-- Конверт -->
+<div class="envelope-wrapper" id="wrapper">
 
-<h1>🎉🎉🎉🎉🎉🎉🎉</h1>
+<div class="envelope">
+
+<div class="envelope-back"></div>
+
+<div class="envelope-flap"></div>
+
+<div class="letter" id="letter">
+
+<div class="ornament"></div>
+
+<h1>🌸</h1>
 
 <h2>ЗЕЙНЕТКЕ ШЫҒУ ТОЙЫ</h2>
 
-<p class="invite">
+<p class="subtitle">
 
-ҚҰРМЕТТІ <br>АҒАЙЫН-ТУЫС, БАУЫРЛАР, ҚҰДА-ЖЕКЖАТ, <br>НАҒАШЫ-ЖИЕН, БӨЛЕЛЕР, <br>СЫНЫПТАСТАР-ҚҰРДАСТАР, <br>ӘРІПТЕСТЕР, АУЫЛДАСТАР МЕН КӨРШІЛЕР!
-
-<br><br>
-
-Сіздерді <br>Серғалидың
-
-<br>зейнетке шығу тойына жайылған ақ дастарханымыздың қадірлі қонағы болуға шақырамыз! 
-
-<br>Той иелері: Жұбайы, балалары. Келіңіздер, қадірлі қонағы болыңыздар!
+Құрметті қонақ!
 
 </p>
 
-<hr>
+<p class="invite">
+
+ҚҰРМЕТТІ
+
+<br><br>
+
+АҒАЙЫН-ТУЫС,
+
+БАУЫРЛАР,
+
+ҚҰДА-ЖЕКЖАТ,
+
+НАҒАШЫ-ЖИЕН,
+
+БӨЛЕЛЕР,
+
+СЫНЫПТАСТАР,
+
+ҚҰРДАСТАР,
+
+ӘРІПТЕСТЕР,
+
+АУЫЛДАСТАР,
+
+КӨРШІЛЕР!
+
+<br><br>
+
+Сіздерді
+
+<strong>СЕРҒАЛЫНЫҢ</strong>
+
+зейнетке шығу құрметіне арналған
+
+ақ дастарханымыздың
+
+қадірлі қонағы болуға
+
+шын жүректен шақырамыз.
+
+<br><br>
+
+Той иелері:
+
+Жұбайы мен балалары.
+
+</p>
+
+<div class="divider"></div>
 
 <div class="info">
 
-<p>📅 <b>Күні:</b> 05 қыркүйек 2026</p>
+<div>📅 <b>05 қыркүйек 2026</b></div>
 
-<p>🕕 <b>Уақыты:</b> 15:00</p>
+<div>🕒 <b>15:00</b></div>
 
-<p>📍 <b>Мекенжай:</b> СҚО, Есіл ауданы, Явленка селосы, "Түркістан" тойханасы</p>
+<div>
+
+📍 СҚО, Есіл ауданы,
+
+Явленка ауылы,
+
+"Түркістан" тойханасы
 
 </div>
+
+</div>
+
+<div class="divider"></div>
 
 <h3>Тойдың басталуына</h3>
 
 <div id="countdown"></div>
 
-<hr>
+<div class="divider"></div>
 
-<h2>Қатысатыныңызды растаңыз</h2>
+<h3>Қатысатыныңызды растаңыз</h3>
 
 <form id="guestForm">
 
 <input
-type="text"
 id="name"
+type="text"
 placeholder="Аты-жөніңіз"
 required>
 
 <input
-type="tel"
 id="phone"
+type="tel"
 placeholder="Телефон">
 
 <input
-type="number"
 id="guestCount"
-placeholder="Қонақ саны"
+type="number"
 value="1"
-min="1">
+min="1"
+placeholder="Қонақ саны">
 
 <button type="submit">
 
-✅ Қатысатынымды растаймын
+Қатысатынымды растаймын
 
 </button>
 
@@ -85,14 +151,31 @@ min="1">
 
 <p id="message"></p>
 
+<div class="share">
+
+<a id="whatsappShare"
+target="_blank">
+
+📱 WhatsApp арқылы бөлісу
+
+</a>
+
 </div>
+
+</div>
+
+</div>
+
+<button id="openBtn">
+
+✉️ Шақыруды ашу
+
+</button>
 
 </div>
 
 <script type="module" src="firebase.js"></script>
-
 <script type="module" src="script.js"></script>
 
 </body>
-
 </html>
