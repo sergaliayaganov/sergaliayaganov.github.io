@@ -2,7 +2,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
-    getFirestore
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    serverTimestamp,
+    query,
+    orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Firebase конфигурациясы
@@ -19,8 +27,18 @@ const firebaseConfig = {
 // Firebase іске қосу
 const app = initializeApp(firebaseConfig);
 
-// Firestore іске қосу
+// Firestore
 const db = getFirestore(app);
 
-// Басқа файлдарға шығару
-export { db };
+// Экспорт
+export {
+    db,
+    collection,
+    addDoc,
+    getDocs,
+    deleteDoc,
+    doc,
+    serverTimestamp,
+    query,
+    orderBy
+};
