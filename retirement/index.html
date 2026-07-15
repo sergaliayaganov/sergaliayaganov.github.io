@@ -1,49 +1,54 @@
 <!DOCTYPE html>
 <html lang="kk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Зейнетке шығу тойына шақыру</title>
 
-<title>Зейнетке шығу тойына шақыру</title>
+    <link rel="stylesheet" href="style.css">
 
-<link rel="stylesheet" href="style.css">
-
-<link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
-<!-- Алтын түсті бөлшектер -->
-<div class="sparkle s1"></div>
-<div class="sparkle s2"></div>
-<div class="sparkle s3"></div>
-<div class="sparkle s4"></div>
+<!-- Фондық өрнек -->
+<div class="background-pattern"></div>
 
 <!-- Конверт -->
-<div class="envelope-wrapper" id="wrapper">
+<section id="welcome">
 
-<div class="envelope">
+    <div class="envelope" id="envelope">
 
-<div class="envelope-back"></div>
+        <div class="envelope-top"></div>
 
-<div class="envelope-flap"></div>
+        <div class="envelope-body"></div>
 
-<div class="letter" id="letter">
+        <div class="seal">🌸</div>
 
-<div class="ornament"></div>
+    </div>
 
-<h1>🌸</h1>
+    <button id="openInvitation">
+        ✉️ Шақыруды ашу
+    </button>
 
-<h2>ЗЕЙНЕТКЕ ШЫҒУ ТОЙЫ</h2>
+</section>
 
-<p class="subtitle">
+<!-- Шақыру -->
+<section id="invitation">
 
+<div class="card">
+
+<div class="top-ornament"></div>
+
+<h1>ЗЕЙНЕТКЕ ШЫҒУ ТОЙЫ</h1>
+
+<p class="script">
 Құрметті қонақ!
-
 </p>
 
-<p class="invite">
+<p class="invite-text">
 
 ҚҰРМЕТТІ
 
@@ -73,7 +78,7 @@
 
 Сіздерді
 
-<strong>СЕРҒАЛЫНЫҢ</strong>
+<strong>СЕРҒАЛИДЫҢ</strong>
 
 зейнетке шығу құрметіне арналған
 
@@ -87,39 +92,73 @@
 
 Той иелері:
 
-Жұбайы мен балалары.
+Жұбайы, балалары.
 
 </p>
 
 <div class="divider"></div>
 
-<div class="info">
+<div class="details">
 
-<div>📅 <b>05 қыркүйек 2026</b></div>
+<div class="detail">
 
-<div>🕒 <b>15:00</b></div>
+<span>📅</span>
 
 <div>
 
-📍 СҚО, Есіл ауданы,
+<b>Күні</b><br>
 
+05 қыркүйек 2026
+
+</div>
+
+</div>
+
+<div class="detail">
+
+<span>🕒</span>
+
+<div>
+
+<b>Уақыты</b><br>
+
+15:00
+
+</div>
+
+</div>
+
+<div class="detail">
+
+<span>📍</span>
+
+<div>
+
+<b>Мекенжай</b><br>
+
+СҚО, Есіл ауданы,
 Явленка ауылы,
-
 "Түркістан" тойханасы
 
 </div>
 
 </div>
 
-<div class="divider"></div>
-
-<h3>Тойдың басталуына</h3>
-
-<div id="countdown"></div>
+</div>
 
 <div class="divider"></div>
 
-<h3>Қатысатыныңызды растаңыз</h3>
+<h2>Тойдың басталуына</h2>
+
+<div id="countdown">
+
+00 күн 00:00:00
+
+</div>
+
+<div class="divider"></div>
+
+<h2>Қатысатыныңызды растаңыз</h2>
 
 <form id="guestForm">
 
@@ -137,9 +176,8 @@ placeholder="Телефон">
 <input
 id="guestCount"
 type="number"
-value="1"
 min="1"
-placeholder="Қонақ саны">
+value="1">
 
 <button type="submit">
 
@@ -151,7 +189,7 @@ placeholder="Қонақ саны">
 
 <p id="message"></p>
 
-<div class="share">
+<div class="share-buttons">
 
 <a id="whatsappShare"
 target="_blank">
@@ -162,19 +200,50 @@ target="_blank">
 
 </div>
 
-</div>
+<div class="divider"></div>
+
+<h2>Өтетін орны</h2>
+
+<div class="map">
+
+<iframe
+src="https://www.google.com/maps?q=Явленка&output=embed"
+loading="lazy"
+allowfullscreen>
+</iframe>
 
 </div>
 
-<button id="openBtn">
+<div class="divider"></div>
 
-✉️ Шақыруды ашу
+<button id="musicBtn">
+
+🎵 Музыканы қосу
 
 </button>
 
+<audio id="music" loop>
+
+<source src="assets/audio/dombyra.mp3" type="audio/mpeg">
+
+</audio>
+
 </div>
 
+</section>
+
+<footer>
+
+Жылы жүздескенше!
+
+<br>
+
+❤️
+
+</footer>
+
 <script type="module" src="firebase.js"></script>
+
 <script type="module" src="script.js"></script>
 
 </body>
