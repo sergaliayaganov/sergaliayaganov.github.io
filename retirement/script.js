@@ -10,7 +10,7 @@ import {
 // Кері санау таймері
 // ==========================
 
-const weddingDate = new Date("2026-12-20T18:00:00").getTime();
+const weddingDate = new Date("2026-09-05T15:00:00").getTime();
 
 function updateCountdown() {
 
