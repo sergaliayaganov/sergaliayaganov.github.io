@@ -126,57 +126,72 @@ guestForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const name = document.getElementById("name").value.trim();
-
     const phone = document.getElementById("phone").value.trim();
+    const guestCount = Number(
+        document.getElementById("guestCount").value
+    );
 
-    const guestCount = Number(document.getElementById("guestCount").value);
-
-    if (name === "") {
-
-        message.style.color = "red";
+    if (!name) {
+        message.style.color = "#b00020";
         message.textContent = "Аты-жөніңізді енгізіңіз.";
-
         return;
-
     }
+
+    if (!guestCount || guestCount < 1) {
+        message.style.color = "#b00020";
+        message.textContent = "Қонақ санын дұрыс енгізіңіз.";
+        return;
+    }
+
+    const submitButton = guestForm.querySelector("button");
+
+    submitButton.disabled = true;
+    submitButton.textContent = "⏳ Сақталуда...";
 
     try {
 
-        await addDoc(collection(db, "guests"), {
+        const docRef = await addDoc(
+            collection(db, "guests"),
+            {
+                name: name,
+                phone: phone,
+                guestCount: guestCount,
+                createdAt: serverTimestamp()
+            }
+        );
 
-            name: name,
-
-            phone: phone,
-
-            guestCount: guestCount,
-
-            createdAt: serverTimestamp()
-
-        });
+        console.log("Қонақ сақталды:", docRef.id);
 
         message.style.color = "green";
 
-        message.innerHTML = "✅ Қатысуыңыз сәтті расталды.<br>Рақмет!";
+        message.innerHTML = `
+            ✅ Қатысуыңыз расталды!<br>
+            Рақмет, ${name}!
+        `;
 
         guestForm.reset();
 
         document.getElementById("guestCount").value = 1;
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        console.error("Firestore қатесі:", error);
 
-        console.error(error);
-
-        message.style.color = "red";
+        message.style.color = "#b00020";
 
         message.textContent =
             "❌ Деректерді сақтау кезінде қате пайда болды.";
 
+    } finally {
+
+        submitButton.disabled = false;
+
+        submitButton.textContent =
+            "✅ Қатысатынымды растаймын";
+
     }
 
 });
-
 /* ==========================
    Scroll Animation
 ========================== */
