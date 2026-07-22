@@ -188,26 +188,40 @@ musicBtn.addEventListener("click", async ()=>{
   else { music.pause(); musicBtn.textContent="♫ Музыканы қосу"; }
 });
 
-const GOOGLE_SCRIPT_URL = ""; 
-// Google Apps Script Web App URL-ін осы жерге енгізіңіз.
-document.getElementById("rsvpForm").addEventListener("submit", async (e)=>{
+const GOOGLE_SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbwVpH1Y0qW8k8bloAGBi62cozmsYxEwzDB3_KLHFyTAionv3Q8_0u9WuXww9Joj60qH/exec";
+
+document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const status = document.getElementById("status");
+
   const data = {
     name: document.getElementById("name").value.trim(),
-    attendance: document.querySelector('input[name="attendance"]:checked').value,
+    attendance: document.querySelector(
+      'input[name="attendance"]:checked'
+    ).value,
     date: new Date().toLocaleString("kk-KZ")
   };
-  if(!GOOGLE_SCRIPT_URL){
-    status.textContent = "Дерек дайын. Google Apps Script URL-ін қосқаннан кейін жауаптар Google кестеге түседі.";
-    return;
-  }
+
   status.textContent = "Жіберілуде...";
-  try{
-    await fetch(GOOGLE_SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(data)});
+
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(data)
+    });
+
     status.textContent = "Рақмет! Жауабыңыз қабылданды.";
-    e.target.reset();
-  }catch(err){ status.textContent = "Қате болды. Қайтадан байқап көріңіз."; }
+    document.getElementById("rsvpForm").reset();
+
+  } catch (error) {
+    status.textContent = "Қате болды. Қайтадан байқап көріңіз.";
+  }
 });
 </script>
 </body>
