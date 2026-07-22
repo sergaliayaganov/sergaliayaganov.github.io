@@ -189,19 +189,20 @@ musicBtn.addEventListener("click", async ()=>{
   else { music.pause(); musicBtn.textContent="♫ Музыканы қосу"; }
 });
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVpH1Y0qW8k8bloAGBi62cozmsYxEwzDB3_KLHFyTAionv3Q8_0u9WuXww9Joj60qH/exec";
+const GOOGLE_SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbwVpH1Y0qW8k8bloAGBi62cozmsYxEwzDB3_KLHFyTAionv3Q8_0u9WuXww9Joj60qH/exec";
 
 document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const status = document.getElementById("status");
-  const submitButton = document.querySelector(".submit-btn");
-
   const name = document.getElementById("name").value.trim();
-  const selected = document.querySelector('input[name="attendance"]:checked');
+  const selected = document.querySelector(
+    'input[name="attendance"]:checked'
+  );
 
   if (!name || !selected) {
-    status.textContent = "Аты-жөніңізді жазып, бір жауапты таңдаңыз.";
+    status.textContent = "Аты-жөніңізді жазып, жауапты таңдаңыз.";
     return;
   }
 
@@ -211,17 +212,12 @@ document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
     date: new Date().toLocaleString("kk-KZ")
   };
 
-  submitButton.disabled = true;
-  submitButton.textContent = "Жіберілуде...";
-  status.textContent = "";
+  status.textContent = "Жіберілуде...";
 
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
       body: JSON.stringify(data)
     });
 
@@ -230,9 +226,6 @@ document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
 
   } catch (error) {
     status.textContent = "Қате болды. Қайтадан байқап көріңіз.";
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Жіберу";
   }
 });
 </script>
