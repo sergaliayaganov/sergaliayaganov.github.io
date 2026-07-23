@@ -84,9 +84,8 @@ text-shadow:
 .time-box strong{display:block;font-family:'Playfair Display',serif;font-size:clamp(2rem,7vw,4rem);line-height:1}
 .time-box span{font-size:1.1rem}
 
-/* RSVP ТӨМЕНГІ БӨЛІМДЕГІ ӨЗГЕРІСТЕР (АРАЛАРЫ ЖАҚЫНДАТЫЛДЫ) */
 .rsvp h2 {
-  margin-bottom: 15px; /* Тақырып пен форма арасы жақындатылды */
+  margin-bottom: 15px;
 }
 .rsvp form {
   max-width: 600px;
@@ -96,11 +95,11 @@ text-shadow:
 .rsvp label.form-label {
   display: block;
   font-size: 1.35rem;
-  margin: 10px 0 4px; /* Жазулардың астындағы бос орын азайтылды */
+  margin: 10px 0 4px;
 }
 .rsvp input[type=text] {
   width: 100%;
-  padding: 10px 14px; /* Инпут ішкі өлшемі сәл жинақы болды */
+  padding: 10px 14px;
   border: 1px solid #c9a15b;
   border-radius: 12px;
   background: rgba(255,255,255,.85);
@@ -108,14 +107,14 @@ text-shadow:
 }
 .options {
   display: grid;
-  gap: 2px; /* Варианттар арасы жақындатылды */
+  gap: 2px;
 }
 .option {
   display: flex;
   align-items: center;
-  gap: 8px; /* Кружок пен мәтін арасы реттелді */
+  gap: 8px;
   font-size: 1.25rem;
-  padding: 3px 0; /* Үсті-асты бос орын азайтылды */
+  padding: 3px 0;
   cursor: pointer;
   border: none;
   background: none;
@@ -127,7 +126,7 @@ text-shadow:
 }
 .submit-btn {
   display: block;
-  margin: 12px auto 0; /* Түйме жоғары жақындатылды */
+  margin: 12px auto 0;
 }
 .status {
   text-align: center;
@@ -137,12 +136,12 @@ text-shadow:
 }
 .final {
   font-size: clamp(2.2rem, 7vw, 4.2rem);
-  margin-top: 15px; /* Шығарып салу мәтіні жоғары жақындатылды */
+  margin-top: 15px;
   line-height: 1.1;
 }
 .footer {
   font-size: 1.1rem;
-  margin-top: 8px; /* Күн мен есім жоғары жақындатылды */
+  margin-top: 8px;
   opacity: .85;
 }
 
@@ -246,6 +245,7 @@ text-shadow:
 </section>
 
 <script>
+// Таймер
 const target = new Date("2026-09-05T15:00:00+05:00").getTime();
 function updateCountdown(){
   const diff = Math.max(0, target - Date.now());
@@ -256,17 +256,55 @@ function updateCountdown(){
 }
 updateCountdown(); setInterval(updateCountdown,1000);
 
+// Музыка және Авто-скролл
 const musicBtn = document.getElementById("musicBtn");
 const music = document.getElementById("music");
-musicBtn.addEventListener("click", async ()=>{
-  if(!music.querySelector("source")){
-    alert("Музыка қосу үшін осы папкаға music.mp3 файлын салып, index.html ішіндегі audio бөліміне source жолын қосыңыз.");
-    return;
+let scrollInterval = null;
+
+function startAutoScroll() {
+  stopAutoScroll();
+  // Әр 20 миллисекунд сайын 1 пиксельге төмен жылжиды (ақырын әрі майда)
+  scrollInterval = setInterval(() => {
+    window.scrollBy({ top: 1, behavior: 'smooth' });
+    // Беттің ең төменіне жетсе тоқтайды
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 10) {
+      stopAutoScroll();
+    }
+  }, 20);
+}
+
+function stopAutoScroll() {
+  if (scrollInterval) {
+    clearInterval(scrollInterval);
+    scrollInterval = null;
   }
-  if(music.paused){ await music.play(); musicBtn.textContent="❚❚ Музыканы тоқтату"; }
-  else { music.pause(); musicBtn.textContent="♫ Музыканы қосу"; }
+}
+
+// Қолданушы экранды өзі ұстап тартса, авто-скроллды тоқтату
+window.addEventListener('wheel', stopAutoScroll);
+window.addEventListener('touchmove', stopAutoScroll);
+
+function pauseMusic() {
+  music.pause();
+  musicBtn.textContent = "♫ Музыканы қосу";
+  stopAutoScroll();
+}
+
+musicBtn.addEventListener("click", async () => {
+  if (music.paused) {
+    try {
+      await music.play();
+      musicBtn.textContent = "❚❚ Музыканы тоқтату";
+      startAutoScroll();
+    } catch(err) {
+      alert("Музыка файлы табылған жоқ немесе браузер бұғаттады.");
+    }
+  } else {
+    pauseMusic();
+  }
 });
 
+// RSVP Форманы жіберу
 const GOOGLE_SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbwVpH1Y0qW8k8bloAGBi62cozmsYxEwzDB3_KLHFyTAionv3Q8_0u9WuXww9Joj60qH/exec";
 
@@ -275,9 +313,7 @@ document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
 
   const status = document.getElementById("status");
   const name = document.getElementById("name").value.trim();
-  const selected = document.querySelector(
-    'input[name="attendance"]:checked'
-  );
+  const selected = document.querySelector('input[name="attendance"]:checked');
 
   if (!name || !selected) {
     status.textContent = "Аты-жөніңізді жазып, жауапты таңдаңыз.";
@@ -301,6 +337,9 @@ document.getElementById("rsvpForm").addEventListener("submit", async (e) => {
 
     status.textContent = "Рақмет! Жауабыңыз қабылданды.";
     document.getElementById("rsvpForm").reset();
+
+    // Жауап сәтті жіберілгеннен кейін музыка мен авто-скролл тоқтайды
+    pauseMusic();
 
   } catch (error) {
     status.textContent = "Қате болды. Қайтадан байқап көріңіз.";
